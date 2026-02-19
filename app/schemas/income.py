@@ -1,10 +1,12 @@
 from pydantic import BaseModel, Field
 from datetime import date
 from typing import Optional, Literal
+from decimal import Decimal
 
 
 class IncomeCreate(BaseModel):
-    amount: float = Field(gt=0)
+    amount: Decimal = Field(gt=0)
+
     source: Literal[
         "Salary",
         "Freelance",
@@ -15,6 +17,7 @@ class IncomeCreate(BaseModel):
         "Refund",
         "Other"
     ]
+
     payment_method: Literal[
         "Cash",
         "Bank Transfer",
@@ -24,13 +27,14 @@ class IncomeCreate(BaseModel):
         "Mobile Wallet",
         "Other"
     ]
+
     date: date
     description: Optional[str] = None
 
 
 class IncomeResponse(BaseModel):
     id: int
-    amount: float
+    amount: Decimal
     source: str
     payment_method: str
     date: date

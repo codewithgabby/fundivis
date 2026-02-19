@@ -31,13 +31,17 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         content={"detail": "Too many login attempts. Please try again later."},
     )
 
-# CORS (adjust later)
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "https://simplesales-web.netlify.app",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Include routers

@@ -1,15 +1,12 @@
 from pydantic import BaseModel, Field
 from datetime import date
 from typing import Optional, Literal
+from decimal import Decimal
 from app.models.expense import NecessityType
 
 
-# =========================
-# CREATE SCHEMA
-# =========================
-
 class ExpenseCreate(BaseModel):
-    amount: float = Field(gt=0)
+    amount: Decimal = Field(gt=0)
 
     category: Literal[
         "Food",
@@ -42,13 +39,9 @@ class ExpenseCreate(BaseModel):
     description: Optional[str] = None
 
 
-# =========================
-# RESPONSE SCHEMA
-# =========================
-
 class ExpenseResponse(BaseModel):
     id: int
-    amount: float
+    amount: Decimal
     category: str
     necessity_type: NecessityType
     payment_method: str

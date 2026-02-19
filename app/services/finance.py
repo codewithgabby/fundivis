@@ -1,9 +1,15 @@
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from decimal import Decimal, ROUND_HALF_UP
 
 from app.models.income import Income
 from app.models.expense import Expense
+
+
+# Helper: always return Decimal
+def _to_decimal(value):
+    return value if isinstance(value, Decimal) else Decimal(str(value))
 
 
 # ==========================================================
@@ -13,13 +19,13 @@ from app.models.expense import Expense
 def calculate_daily_summary(db: Session, user_id: int):
     today = date.today()
 
-    total_income = (
+    total_income = _to_decimal(
         db.query(func.coalesce(func.sum(Income.amount), 0))
         .filter(Income.user_id == user_id, Income.date == today)
         .scalar()
     )
 
-    total_expense = (
+    total_expense = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
         .filter(Expense.user_id == user_id, Expense.date == today)
         .scalar()
@@ -40,19 +46,19 @@ def calculate_monthly_summary(db: Session, user_id: int):
     today = date.today()
     month_start = today.replace(day=1)
 
-    total_income = (
+    total_income = _to_decimal(
         db.query(func.coalesce(func.sum(Income.amount), 0))
         .filter(Income.user_id == user_id, Income.date >= month_start)
         .scalar()
     )
 
-    total_expense = (
+    total_expense = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
         .filter(Expense.user_id == user_id, Expense.date >= month_start)
         .scalar()
     )
 
-    essential_spending = (
+    essential_spending = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
         .filter(
             Expense.user_id == user_id,
@@ -62,7 +68,7 @@ def calculate_monthly_summary(db: Session, user_id: int):
         .scalar()
     )
 
-    non_essential_spending = (
+    non_essential_spending = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
         .filter(
             Expense.user_id == user_id,
@@ -86,18 +92,24 @@ def calculate_monthly_summary(db: Session, user_id: int):
     )
 
     category_breakdown = {
-        category: total
+        category: _to_decimal(total)
         for category, total in category_data
     }
 
     savings = total_income - total_expense
-    savings_rate = (savings / total_income) * 100 if total_income > 0 else 0
+
+    if total_income > 0:
+        savings_rate = (
+            (savings / total_income) * Decimal("100")
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    else:
+        savings_rate = Decimal("0.00")
 
     return {
         "total_income": total_income,
         "total_expense": total_expense,
         "savings": savings,
-        "savings_rate": round(savings_rate, 2),
+        "savings_rate": savings_rate,
         "essential_spending": essential_spending,
         "non_essential_spending": non_essential_spending,
         "category_breakdown": category_breakdown
@@ -112,7 +124,7 @@ def calculate_insights(db: Session, user_id: int):
     today = date.today()
     month_start = today.replace(day=1)
 
-    total_expense = (
+    total_expense = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
         .filter(Expense.user_id == user_id, Expense.date >= month_start)
         .scalar()
@@ -150,7 +162,7 @@ def calculate_insights(db: Session, user_id: int):
     )
 
     # Non-essential %
-    non_essential_total = (
+    non_essential_total = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
         .filter(
             Expense.user_id == user_id,
@@ -160,23 +172,28 @@ def calculate_insights(db: Session, user_id: int):
         .scalar()
     )
 
-    non_essential_percentage = (
-        (non_essential_total / total_expense) * 100
-        if total_expense > 0 else 0
-    )
+    if total_expense > 0:
+        non_essential_percentage = (
+            (non_essential_total / total_expense) * Decimal("100")
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    else:
+        non_essential_percentage = Decimal("0.00")
 
     # Average daily spend
-    days_passed = max(today.day, 1)
-    average_daily_spend = (
-        total_expense / days_passed
-        if total_expense > 0 else 0
-    )
+    days_passed = Decimal(str(max(today.day, 1)))
+
+    if total_expense > 0:
+        average_daily_spend = (
+            total_expense / days_passed
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    else:
+        average_daily_spend = Decimal("0.00")
 
     return {
         "top_spending_category": top_spending_category,
         "highest_single_expense": highest_single_expense,
-        "non_essential_spending_percentage": round(non_essential_percentage, 2),
-        "average_daily_spend": round(average_daily_spend, 2)
+        "non_essential_spending_percentage": non_essential_percentage,
+        "average_daily_spend": average_daily_spend
     }
 
 
@@ -215,7 +232,6 @@ def calculate_streaks(db: Session, user_id: int):
     today = date.today()
     tracked_today = today in tracked_dates
 
-    # Current streak
     current_streak = 0
     expected_date = today
 
@@ -226,7 +242,6 @@ def calculate_streaks(db: Session, user_id: int):
         elif d < expected_date:
             break
 
-    # Longest streak
     longest_streak = 1
     temp_streak = 1
 
@@ -267,13 +282,19 @@ def calculate_savings_trend(db: Session, user_id: int):
             income_query = income_query.filter(Income.date <= end)
             expense_query = expense_query.filter(Expense.date <= end)
 
-        income = income_query.scalar()
-        expense = expense_query.scalar()
+        income = _to_decimal(income_query.scalar())
+        expense = _to_decimal(expense_query.scalar())
 
         savings = income - expense
-        savings_rate = (savings / income) * 100 if income > 0 else 0
 
-        return income, expense, savings, round(savings_rate, 2)
+        if income > 0:
+            savings_rate = (
+                (savings / income) * Decimal("100")
+            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        else:
+            savings_rate = Decimal("0.00")
+
+        return income, expense, savings, savings_rate
 
     current_income, current_expense, current_savings, current_rate = \
         month_totals(current_month_start)
@@ -296,7 +317,9 @@ def calculate_savings_trend(db: Session, user_id: int):
         },
         "trend": {
             "savings_change": current_savings - prev_savings,
-            "savings_rate_change": round(current_rate - prev_rate, 2),
+            "savings_rate_change": (
+                current_rate - prev_rate
+            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
             "direction": (
                 "improving"
                 if current_savings > prev_savings
