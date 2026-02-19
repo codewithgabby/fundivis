@@ -39,8 +39,8 @@ app.add_middleware(
         "http://localhost:5500",
         "https://fundivis.netlify.app",
     ],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
