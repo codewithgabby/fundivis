@@ -37,10 +37,10 @@ app.add_middleware(
     allow_origins=[
         "http://127.0.0.1:5500",
         "http://localhost:5500",
-        "https://simplesales-web.netlify.app",
+        "https://fundivis.netlify.app",
     ],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
