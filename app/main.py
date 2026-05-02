@@ -44,7 +44,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-# Include routers
+
 app.include_router(auth.router)
 app.include_router(income.router)
 app.include_router(expense.router)
