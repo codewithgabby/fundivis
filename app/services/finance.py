@@ -2,12 +2,12 @@ from datetime import date, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from decimal import Decimal, ROUND_HALF_UP
+from typing import List
 
 from app.models.income import Income
 from app.models.expense import Expense
 
 
-# Helper: always return Decimal
 def _to_decimal(value):
     return value if isinstance(value, Decimal) else Decimal(str(value))
 
@@ -39,12 +39,13 @@ def calculate_daily_summary(db: Session, user_id: int):
 
 
 # ==========================================================
-# MONTHLY SUMMARY
+# MONTHLY SUMMARY (WITH CONTEXTUAL MESSAGES)
 # ==========================================================
 
 def calculate_monthly_summary(db: Session, user_id: int):
     today = date.today()
     month_start = today.replace(day=1)
+    month_name = today.strftime("%B")
 
     total_income = _to_decimal(
         db.query(func.coalesce(func.sum(Income.amount), 0))
@@ -78,6 +79,17 @@ def calculate_monthly_summary(db: Session, user_id: int):
         .scalar()
     )
 
+    # Unclassified expenses (no necessity_type set)
+    unclassified_spending = _to_decimal(
+        db.query(func.coalesce(func.sum(Expense.amount), 0))
+        .filter(
+            Expense.user_id == user_id,
+            Expense.date >= month_start,
+            Expense.necessity_type == None
+        )
+        .scalar()
+    )
+
     category_data = (
         db.query(
             Expense.category,
@@ -105,6 +117,44 @@ def calculate_monthly_summary(db: Session, user_id: int):
     else:
         savings_rate = Decimal("0.00")
 
+    # ==========================================================
+    # CONTEXTUAL MESSAGES (NEW)
+    # ==========================================================
+    contextual_messages: List[str] = []
+
+    if total_income == 0 and total_expense > 0:
+        contextual_messages.append(
+            f"No income recorded for {month_name} yet. "
+            f"Your expenses of ₦{total_expense:,.2f} are being tracked. "
+            f"Add income to see your true savings."
+        )
+    elif total_income == 0 and total_expense == 0:
+        contextual_messages.append(
+            f"No transactions recorded for {month_name} yet. "
+            f"Start tracking to build financial visibility."
+        )
+    elif savings < 0:
+        contextual_messages.append(
+            f"You're spending more than you earn this month. "
+            f"Consider reviewing your non-essential expenses."
+        )
+
+    if non_essential_spending > essential_spending and essential_spending > 0:
+        contextual_messages.append(
+            f"Your non-essential spending (₦{non_essential_spending:,.2f}) "
+            f"exceeds essential spending (₦{essential_spending:,.2f}). "
+            f"This might need attention."
+        )
+
+    # Check if subscriptions are the top category
+    if category_breakdown and "Subscriptions" in category_breakdown:
+        top_cat = max(category_breakdown, key=category_breakdown.get)
+        if top_cat == "Subscriptions":
+            contextual_messages.append(
+                "Subscriptions are your highest expense category. "
+                "Consider reviewing your recurring subscriptions."
+            )
+
     return {
         "total_income": total_income,
         "total_expense": total_expense,
@@ -112,17 +162,26 @@ def calculate_monthly_summary(db: Session, user_id: int):
         "savings_rate": savings_rate,
         "essential_spending": essential_spending,
         "non_essential_spending": non_essential_spending,
-        "category_breakdown": category_breakdown
+        "unclassified_spending": unclassified_spending,
+        "category_breakdown": category_breakdown,
+        "contextual_messages": contextual_messages,
+        "month_label": f"{month_name} {today.year}"
     }
 
 
 # ==========================================================
-# INSIGHTS
+# INSIGHTS (WITH DERIVED INSIGHTS ARRAY)
 # ==========================================================
 
 def calculate_insights(db: Session, user_id: int):
     today = date.today()
     month_start = today.replace(day=1)
+
+    total_income = _to_decimal(
+        db.query(func.coalesce(func.sum(Income.amount), 0))
+        .filter(Income.user_id == user_id, Income.date >= month_start)
+        .scalar()
+    )
 
     total_expense = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
@@ -172,12 +231,27 @@ def calculate_insights(db: Session, user_id: int):
         .scalar()
     )
 
+    # Unclassified %
+    unclassified_total = _to_decimal(
+        db.query(func.coalesce(func.sum(Expense.amount), 0))
+        .filter(
+            Expense.user_id == user_id,
+            Expense.date >= month_start,
+            Expense.necessity_type == None
+        )
+        .scalar()
+    )
+
     if total_expense > 0:
         non_essential_percentage = (
             (non_essential_total / total_expense) * Decimal("100")
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        unclassified_percentage = (
+            (unclassified_total / total_expense) * Decimal("100")
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     else:
         non_essential_percentage = Decimal("0.00")
+        unclassified_percentage = Decimal("0.00")
 
     # Average daily spend
     days_passed = Decimal(str(max(today.day, 1)))
@@ -189,11 +263,56 @@ def calculate_insights(db: Session, user_id: int):
     else:
         average_daily_spend = Decimal("0.00")
 
+    # ==========================================================
+    # DERIVED INSIGHTS (NEW)
+    # ==========================================================
+    derived_insights: List[str] = []
+
+    if total_expense > total_income and total_income > 0:
+        derived_insights.append(
+            "You are spending more than you earn this month. "
+            "Review your non-essential expenses."
+        )
+
+    if top_spending_category == "Subscriptions":
+        derived_insights.append(
+            "Subscriptions are your highest expense. "
+            "Consider reviewing recurring charges."
+        )
+
+    if top_spending_category == "Food":
+        derived_insights.append(
+            "Food is your top spending category. "
+            "Consider meal planning to reduce costs."
+        )
+
+    if non_essential_percentage > 50:
+        derived_insights.append(
+            f"Over {non_essential_percentage}% of your spending is non-essential. "
+            f"Try reducing this to increase savings."
+        )
+
+    if average_daily_spend > 0 and total_income > 0:
+        burn_rate_days = int(total_income / average_daily_spend) if average_daily_spend > 0 else 0
+        if burn_rate_days < 15:
+            derived_insights.append(
+                f"At your current spending rate, your monthly income would "
+                f"last only {burn_rate_days} days. Consider budgeting."
+            )
+
+    if total_expense == 0 and total_income == 0:
+        derived_insights.append(
+            "Start tracking your income and expenses to unlock "
+            "personalized financial insights."
+        )
+
     return {
         "top_spending_category": top_spending_category,
         "highest_single_expense": highest_single_expense,
         "non_essential_spending_percentage": non_essential_percentage,
-        "average_daily_spend": average_daily_spend
+        "unclassified_percentage": unclassified_percentage,
+        "average_daily_spend": average_daily_spend,
+        "derived_insights": derived_insights
     }
 
 
@@ -267,9 +386,11 @@ def calculate_streaks(db: Session, user_id: int):
 def calculate_savings_trend(db: Session, user_id: int):
     today = date.today()
     current_month_start = today.replace(day=1)
+    current_month_name = today.strftime("%B")
 
     previous_month_end = current_month_start - timedelta(days=1)
     previous_month_start = previous_month_end.replace(day=1)
+    previous_month_name = previous_month_start.strftime("%B")
 
     def month_totals(start, end=None):
         income_query = db.query(func.coalesce(func.sum(Income.amount), 0)) \
@@ -302,14 +423,30 @@ def calculate_savings_trend(db: Session, user_id: int):
     prev_income, prev_expense, prev_savings, prev_rate = \
         month_totals(previous_month_start, previous_month_end)
 
+    # Contextual message for declining
+    trend_message = None
+    if prev_savings > 0 and current_savings < 0:
+        trend_message = (
+            f"Last month ({previous_month_name}) you saved ₦{prev_savings:,.2f}. "
+            f"This month ({current_month_name}) you're in deficit. "
+            f"Check if you missed recording income or if expenses increased."
+        )
+    elif current_savings > prev_savings and prev_savings > 0:
+        trend_message = (
+            f"Your savings improved by ₦{current_savings - prev_savings:,.2f} "
+            f"compared to last month. Keep it up!"
+        )
+
     return {
         "current_month": {
+            "label": current_month_name,
             "income": current_income,
             "expenses": current_expense,
             "savings": current_savings,
             "savings_rate": current_rate
         },
         "previous_month": {
+            "label": previous_month_name,
             "income": prev_income,
             "expenses": prev_expense,
             "savings": prev_savings,
@@ -326,6 +463,7 @@ def calculate_savings_trend(db: Session, user_id: int):
                 else "declining"
                 if current_savings < prev_savings
                 else "stable"
-            )
+            ),
+            "message": trend_message
         }
     }
