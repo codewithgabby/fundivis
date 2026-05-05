@@ -68,3 +68,53 @@ def get_incomes(
         "limit": limit,
         "data": incomes
     }
+
+
+
+@router.put("/{income_id}", response_model=IncomeResponse)
+def update_income(
+    income_id: int,
+    income_data: IncomeCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    income = db.query(Income).filter(
+        Income.id == income_id,
+        Income.user_id == current_user.id
+    ).first()
+
+    if not income:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Income not found")
+
+    income.amount = income_data.amount
+    income.source = income_data.source
+    income.payment_method = income_data.payment_method
+    income.date = income_data.date
+    income.description = income_data.description
+
+    db.commit()
+    db.refresh(income)
+
+    return income
+
+
+@router.delete("/{income_id}", status_code=status.HTTP_200_OK)
+def delete_income(
+    income_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    income = db.query(Income).filter(
+        Income.id == income_id,
+        Income.user_id == current_user.id
+    ).first()
+
+    if not income:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Income not found")
+
+    db.delete(income)
+    db.commit()
+
+    return {"message": "Income deleted successfully"}    

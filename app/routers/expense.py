@@ -69,3 +69,54 @@ def get_expenses(
         "limit": limit,
         "data": expenses
     }
+
+
+
+@router.put("/{expense_id}", response_model=ExpenseResponse)
+def update_expense(
+    expense_id: int,
+    expense_data: ExpenseCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    expense = db.query(Expense).filter(
+        Expense.id == expense_id,
+        Expense.user_id == current_user.id
+    ).first()
+
+    if not expense:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Expense not found")
+
+    expense.amount = expense_data.amount
+    expense.category = expense_data.category
+    expense.necessity_type = expense_data.necessity_type
+    expense.payment_method = expense_data.payment_method
+    expense.date = expense_data.date
+    expense.description = expense_data.description
+
+    db.commit()
+    db.refresh(expense)
+
+    return expense
+
+
+@router.delete("/{expense_id}", status_code=status.HTTP_200_OK)
+def delete_expense(
+    expense_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    expense = db.query(Expense).filter(
+        Expense.id == expense_id,
+        Expense.user_id == current_user.id
+    ).first()
+
+    if not expense:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Expense not found")
+
+    db.delete(expense)
+    db.commit()
+
+    return {"message": "Expense deleted successfully"}
