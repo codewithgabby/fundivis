@@ -29,6 +29,7 @@ def add_expense(
         amount=expense_data.amount,
         category=expense_data.category,
         necessity_type=expense_data.necessity_type,
+        wealth_bucket=expense_data.wealth_bucket,
         payment_method=expense_data.payment_method,
         date=expense_data.date,
         description=expense_data.description,
@@ -91,6 +92,7 @@ def update_expense(
     expense.amount = expense_data.amount
     expense.category = expense_data.category
     expense.necessity_type = expense_data.necessity_type
+    expense.wealth_bucket = expense_data.wealth_bucket
     expense.payment_method = expense_data.payment_method
     expense.date = expense_data.date
     expense.description = expense_data.description

@@ -45,6 +45,13 @@ class Expense(Base):
         nullable=False
     )
 
+    wealth_bucket = Column(
+        String(50),
+        nullable=True,
+        default=None,
+        comment="Wealth allocation bucket: family, freedom_fund, emergency_buffer, asset_building"
+    )
+
     payment_method = Column(String(50), nullable=False)
 
     date = Column(Date, nullable=False)

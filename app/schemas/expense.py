@@ -25,6 +25,13 @@ class ExpenseCreate(BaseModel):
 
     necessity_type: NecessityType
 
+    wealth_bucket: Optional[Literal[
+        "family",
+        "freedom_fund",
+        "emergency_buffer",
+        "asset_building"
+    ]] = None
+
     payment_method: Literal[
         "Cash",
         "Bank Transfer",
@@ -44,6 +51,7 @@ class ExpenseResponse(BaseModel):
     amount: Decimal
     category: str
     necessity_type: NecessityType
+    wealth_bucket: Optional[str] = None
     payment_method: str
     date: date
     description: Optional[str]

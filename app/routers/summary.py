@@ -13,7 +13,8 @@ from app.services.finance import (
     calculate_monthly_summary,
     calculate_insights,
     calculate_streaks,
-    calculate_savings_trend
+    calculate_savings_trend,
+    calculate_wealth_buckets
 
 )
 
@@ -59,3 +60,11 @@ def savings_trend(
     current_user: User = Depends(get_current_user)
 ):
     return calculate_savings_trend(db, current_user.id)
+
+
+@router.get("/wealth-buckets")
+def wealth_buckets(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return calculate_wealth_buckets(db, current_user.id)    
