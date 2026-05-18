@@ -6,6 +6,7 @@ from typing import List
 
 from app.models.income import Income
 from app.models.expense import Expense
+from app.models.bucket_activity import BucketActivity, ActivityType
 
 
 def _to_decimal(value):
@@ -384,98 +385,191 @@ def calculate_streaks(db: Session, user_id: int):
 # ==========================================================
 
 def calculate_wealth_buckets(db: Session, user_id: int):
+    """
+    Calculate wealth bucket balances from activity log.
+    This is the NEW implementation using BucketActivity model.
+    Falls back to expense-based calculation if no activities exist (for backward compatibility).
+    """
     today = date.today()
     month_start = today.replace(day=1)
-
-    # Get totals for each bucket from expenses
-    family_total = _to_decimal(
-        db.query(func.coalesce(func.sum(Expense.amount), 0))
-        .filter(
-            Expense.user_id == user_id,
-            Expense.date >= month_start,
-            Expense.wealth_bucket == "family"
+    
+    # Check if user has any bucket activities
+    has_activities = db.query(BucketActivity).filter(
+        BucketActivity.user_id == user_id
+    ).first() is not None
+    
+    if has_activities:
+        # NEW: Calculate from activity log
+        bucket_configs = {
+            "family": "🏠 Family",
+            "freedom_fund": "🕊️ Freedom Fund",
+            "emergency_buffer": "🚨 Emergency Buffer",
+            "asset_building": "📈 Asset Building"
+        }
+        
+        buckets = {}
+        total_balance = Decimal("0.00")
+        
+        for bucket_name, label in bucket_configs.items():
+            allocations = _to_decimal(
+                db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+                .filter(
+                    BucketActivity.user_id == user_id,
+                    BucketActivity.bucket_name == bucket_name,
+                    BucketActivity.activity_type == ActivityType.allocation
+                )
+                .scalar()
+            )
+            
+            transfers_in = _to_decimal(
+                db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+                .filter(
+                    BucketActivity.user_id == user_id,
+                    BucketActivity.bucket_name == bucket_name,
+                    BucketActivity.activity_type == ActivityType.transfer_in
+                )
+                .scalar()
+            )
+            
+            withdrawals = _to_decimal(
+                db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+                .filter(
+                    BucketActivity.user_id == user_id,
+                    BucketActivity.bucket_name == bucket_name,
+                    BucketActivity.activity_type.in_([
+                        ActivityType.withdrawal_transfer,
+                        ActivityType.withdrawal_expense
+                    ])
+                )
+                .scalar()
+            )
+            
+            transfers_out = _to_decimal(
+                db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+                .filter(
+                    BucketActivity.user_id == user_id,
+                    BucketActivity.bucket_name == bucket_name,
+                    BucketActivity.activity_type == ActivityType.transfer_out
+                )
+                .scalar()
+            )
+            
+            balance = allocations + transfers_in - withdrawals - transfers_out
+            buckets[bucket_name] = {
+                "amount": float(balance),
+                "percentage": 0.0,  # Will calculate below
+                "label": label
+            }
+            total_balance += balance
+        
+        # Calculate percentages
+        total_abs = sum(abs(b["amount"]) for b in buckets.values())
+        if total_abs > 0:
+            for b in buckets.values():
+                b["percentage"] = round((abs(b["amount"]) / total_abs) * 100, 1)
+        
+        return {
+            **buckets,
+            "unallocated": {
+                "amount": 0,
+                "percentage": 0,
+                "label": "❓ Unallocated"
+            },
+            "total_expenses": float(total_balance),
+            "month_label": today.strftime("%B %Y"),
+            "calculation_method": "activity_log"
+        }
+    
+    else:
+        # FALLBACK: Original expense-based calculation for backward compatibility
+        family_total = _to_decimal(
+            db.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                Expense.user_id == user_id,
+                Expense.date >= month_start,
+                Expense.wealth_bucket == "family"
+            )
+            .scalar()
         )
-        .scalar()
-    )
 
-    freedom_fund_total = _to_decimal(
-        db.query(func.coalesce(func.sum(Expense.amount), 0))
-        .filter(
-            Expense.user_id == user_id,
-            Expense.date >= month_start,
-            Expense.wealth_bucket == "freedom_fund"
+        freedom_fund_total = _to_decimal(
+            db.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                Expense.user_id == user_id,
+                Expense.date >= month_start,
+                Expense.wealth_bucket == "freedom_fund"
+            )
+            .scalar()
         )
-        .scalar()
-    )
 
-    emergency_buffer_total = _to_decimal(
-        db.query(func.coalesce(func.sum(Expense.amount), 0))
-        .filter(
-            Expense.user_id == user_id,
-            Expense.date >= month_start,
-            Expense.wealth_bucket == "emergency_buffer"
+        emergency_buffer_total = _to_decimal(
+            db.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                Expense.user_id == user_id,
+                Expense.date >= month_start,
+                Expense.wealth_bucket == "emergency_buffer"
+            )
+            .scalar()
         )
-        .scalar()
-    )
 
-    asset_building_total = _to_decimal(
-        db.query(func.coalesce(func.sum(Expense.amount), 0))
-        .filter(
-            Expense.user_id == user_id,
-            Expense.date >= month_start,
-            Expense.wealth_bucket == "asset_building"
+        asset_building_total = _to_decimal(
+            db.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                Expense.user_id == user_id,
+                Expense.date >= month_start,
+                Expense.wealth_bucket == "asset_building"
+            )
+            .scalar()
         )
-        .scalar()
-    )
 
-    # Unallocated (no bucket assigned)
-    unallocated_total = _to_decimal(
-        db.query(func.coalesce(func.sum(Expense.amount), 0))
-        .filter(
-            Expense.user_id == user_id,
-            Expense.date >= month_start,
-            Expense.wealth_bucket == None
+        unallocated_total = _to_decimal(
+            db.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                Expense.user_id == user_id,
+                Expense.date >= month_start,
+                Expense.wealth_bucket == None
+            )
+            .scalar()
         )
-        .scalar()
-    )
 
-    total_allocated = family_total + freedom_fund_total + emergency_buffer_total + asset_building_total
-    total_expenses = total_allocated + unallocated_total
+        total_allocated = family_total + freedom_fund_total + emergency_buffer_total + asset_building_total
+        total_expenses = total_allocated + unallocated_total
 
-    def calc_pct(amount):
-        if total_expenses > 0:
-            return float((amount / total_expenses * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
-        return 0.0
+        def calc_pct(amount):
+            if total_expenses > 0:
+                return float((amount / total_expenses * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+            return 0.0
 
-    return {
-        "family": {
-            "amount": float(family_total),
-            "percentage": calc_pct(family_total),
-            "label": "🏠 Family"
-        },
-        "freedom_fund": {
-            "amount": float(freedom_fund_total),
-            "percentage": calc_pct(freedom_fund_total),
-            "label": "🕊️ Freedom Fund"
-        },
-        "emergency_buffer": {
-            "amount": float(emergency_buffer_total),
-            "percentage": calc_pct(emergency_buffer_total),
-            "label": "🚨 Emergency Buffer"
-        },
-        "asset_building": {
-            "amount": float(asset_building_total),
-            "percentage": calc_pct(asset_building_total),
-            "label": "📈 Asset Building"
-        },
-        "unallocated": {
-            "amount": float(unallocated_total),
-            "percentage": calc_pct(unallocated_total),
-            "label": "❓ Unallocated"
-        },
-        "total_expenses": float(total_expenses),
-        "month_label": today.strftime("%B %Y")
-    }
+        return {
+            "family": {
+                "amount": float(family_total),
+                "percentage": calc_pct(family_total),
+                "label": "🏠 Family"
+            },
+            "freedom_fund": {
+                "amount": float(freedom_fund_total),
+                "percentage": calc_pct(freedom_fund_total),
+                "label": "🕊️ Freedom Fund"
+            },
+            "emergency_buffer": {
+                "amount": float(emergency_buffer_total),
+                "percentage": calc_pct(emergency_buffer_total),
+                "label": "🚨 Emergency Buffer"
+            },
+            "asset_building": {
+                "amount": float(asset_building_total),
+                "percentage": calc_pct(asset_building_total),
+                "label": "📈 Asset Building"
+            },
+            "unallocated": {
+                "amount": float(unallocated_total),
+                "percentage": calc_pct(unallocated_total),
+                "label": "❓ Unallocated"
+            },
+            "total_expenses": float(total_expenses),
+            "month_label": today.strftime("%B %Y"),
+            "calculation_method": "expense_tagging"
+        }
 
 # ==========================================================
 # SAVINGS TREND
