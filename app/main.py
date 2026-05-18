@@ -1,5 +1,3 @@
-# app/main.py
-
 import logging
 
 from fastapi import FastAPI, Request
@@ -21,6 +19,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS - MUST be first middleware (before SlowAPI)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
@@ -30,20 +37,6 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         status_code=429,
         content={"detail": "Too many login attempts. Please try again later."},
     )
-
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "https://fundivis.netlify.app",
-    ],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
-)
-
 
 app.include_router(auth.router)
 app.include_router(income.router)
@@ -58,5 +51,3 @@ def root():
         "status": "ok",
         "message": "Fundivis API is running"
     }
-
-
