@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, Literal
 from decimal import Decimal
 from app.models.bucket_activity import ActivityType
@@ -70,7 +70,7 @@ class BucketActivityResponse(BaseModel):
     expense_id: Optional[int] = None
     description: Optional[str] = None
     date: date
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
