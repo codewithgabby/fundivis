@@ -6,6 +6,7 @@ from typing import List, Dict, Optional
 
 from app.models.bucket_activity import BucketActivity, ActivityType
 from app.models.expense import Expense
+from app.models.income import Income
 from app.schemas.bucket import (
     BucketAllocate,
     BucketWithdraw, 
@@ -145,21 +146,34 @@ def withdraw_from_bucket(db: Session, user_id: int, data: BucketWithdraw) -> Buc
         date=data.date
     )
     
-    # If "use as expense", create the actual expense record
-    if data.withdrawal_type == "use_as_expense":
+    if data.withdrawal_type == "transfer_only":
+        # Create INCOME to return money to available balance
+        
+        income = Income(
+            user_id=user_id,
+            amount=data.amount,
+            source=f"Bucket Return ({data.bucket_name})",
+            payment_method="Bank Transfer",
+            date=data.date,
+            description=f"Un-allocated from {data.bucket_name}: {data.description or 'Transfer only withdrawal'}"
+        )
+        db.add(income)
+        db.flush()
+    
+    elif data.withdrawal_type == "use_as_expense":
+        # Create expense record for actual spending
         expense = Expense(
             user_id=user_id,
             amount=data.amount,
             category="Wealth Bucket Withdrawal",
-            necessity_type="essential",  # Default to essential
+            necessity_type="essential",
             wealth_bucket=data.bucket_name,
             payment_method="Bank Transfer",
             date=data.date,
             description=f"Withdrawn from {data.bucket_name}: {data.description or 'Bucket withdrawal'}"
         )
         db.add(expense)
-        db.flush()  # Get the expense ID
-        
+        db.flush()
         activity.expense_id = expense.id
     
     db.add(activity)
