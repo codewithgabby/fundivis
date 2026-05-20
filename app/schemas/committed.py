@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, Literal
 from decimal import Decimal
 
@@ -21,7 +21,7 @@ class CommittedExpenseResponse(BaseModel):
     is_recurring: bool
     recurrence_pattern: Optional[str] = None
     is_paid: bool
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
