@@ -401,10 +401,10 @@ def calculate_wealth_buckets(db: Session, user_id: int):
     if has_activities:
         # NEW: Calculate from activity log
         bucket_configs = {
-            "family": "🏠 Family",
-            "freedom_fund": "🕊️ Freedom Fund",
-            "emergency_buffer": "🚨 Emergency Buffer",
-            "asset_building": "📈 Asset Building"
+            "family": '<i class="fas fa-home"></i> Family',
+            "freedom_fund": '<i class="fas fa-dove"></i> Freedom Fund',
+            "emergency_buffer": '<i class="fas fa-shield-alt"></i> Emergency Buffer',
+            "asset_building": '<i class="fas fa-chart-line"></i> Asset Building'
         }
         
         buckets = {}
@@ -544,22 +544,22 @@ def calculate_wealth_buckets(db: Session, user_id: int):
             "family": {
                 "amount": float(family_total),
                 "percentage": calc_pct(family_total),
-                "label": "🏠 Family"
+                "label": '<i class="fas fa-home"></i> Family'
             },
             "freedom_fund": {
                 "amount": float(freedom_fund_total),
                 "percentage": calc_pct(freedom_fund_total),
-                "label": "🕊️ Freedom Fund"
+                "label": '<i class="fas fa-dove"></i> Freedom Fund'
             },
             "emergency_buffer": {
                 "amount": float(emergency_buffer_total),
                 "percentage": calc_pct(emergency_buffer_total),
-                "label": "🚨 Emergency Buffer"
+                "label": '<i class="fas fa-shield-alt"></i> Emergency Buffer'
             },
             "asset_building": {
                 "amount": float(asset_building_total),
                 "percentage": calc_pct(asset_building_total),
-                "label": "📈 Asset Building"
+                "label": '<i class="fas fa-chart-line"></i> Asset Building'
             },
             "unallocated": {
                 "amount": float(unallocated_total),

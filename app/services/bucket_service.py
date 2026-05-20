@@ -258,10 +258,10 @@ def calculate_all_bucket_balances(db: Session, user_id: int) -> Dict:
     today = date.today()
     
     bucket_configs = {
-        "family": {"label": "🏠 Family", "color": "blue"},
-        "freedom_fund": {"label": "🕊️ Freedom Fund", "color": "purple"},
-        "emergency_buffer": {"label": "🚨 Emergency Buffer", "color": "red"},
-        "asset_building": {"label": "📈 Asset Building", "color": "emerald"}
+        "family": {"label": '<i class="fas fa-home"></i> Family', "color": "blue"},
+        "freedom_fund": {"label": '<i class="fas fa-dove"></i> Freedom Fund', "color": "purple"},
+        "emergency_buffer": {"label": '<i class="fas fa-shield-alt"></i> Emergency Buffer', "color": "red"},
+        "asset_building": {"label": '<i class="fas fa-chart-line"></i> Asset Building', "color": "emerald"}
     }
     
     buckets = {}
