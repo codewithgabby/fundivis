@@ -703,10 +703,18 @@ def calculate_safe_to_spend(db: Session, user_id: int):
         .scalar()
     )
     
-    # Money locked in buckets
+        # Money locked in buckets (ALL buckets including custom ones)
     bucket_protected = _to_decimal(Decimal("0.00"))
-    bucket_configs = ["family", "freedom_fund", "emergency_buffer", "asset_building"]
-    for bucket_name in bucket_configs:
+    
+    # Get all unique bucket names that have activity
+    all_bucket_names = (
+        db.query(BucketActivity.bucket_name)
+        .filter(BucketActivity.user_id == user_id)
+        .distinct()
+        .all()
+    )
+    
+    for (bucket_name,) in all_bucket_names:
         allocations = _to_decimal(
             db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
             .filter(
