@@ -207,7 +207,7 @@ def transfer_between_buckets(db: Session, user_id: int, data: BucketTransfer) ->
     )
     db.add(transfer_out)
     
-    # Create transfer in activity
+    ### Create transfer in activity
     transfer_in = BucketActivity(
         user_id=user_id,
         bucket_name=data.to_bucket,
