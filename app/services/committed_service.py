@@ -58,16 +58,34 @@ def delete_committed_expense(db: Session, expense_id: int, user_id: int) -> bool
 
 
 def mark_as_paid(db: Session, expense_id: int, user_id: int):
-    """Mark committed expense as paid and link to actual expense if provided."""
-    expense = db.query(CommittedExpense).filter(
+    """Mark committed expense as paid and create the actual expense transaction."""
+    from app.models.expense import Expense
+    
+    committed = db.query(CommittedExpense).filter(
         CommittedExpense.id == expense_id,
         CommittedExpense.user_id == user_id
     ).first()
     
-    if not expense:
+    if not committed:
         return None
     
-    expense.is_paid = True
+    # Create the actual expense transaction
+    expense = Expense(
+        user_id=user_id,
+        amount=committed.amount,
+        category="Rent / Housing" if "rent" in committed.title.lower() else "Bills",
+        necessity_type="essential",
+        payment_method="Bank Transfer",
+        date=committed.due_date,
+        description=f"Paid: {committed.title}"
+    )
+    db.add(expense)
+    db.flush()
+    
+    # Link expense to committed bill
+    committed.is_paid = True
+    committed.expense_id = expense.id
+    
     db.commit()
-    db.refresh(expense)
-    return expense
+    db.refresh(committed)
+    return committed
