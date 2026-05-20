@@ -16,7 +16,8 @@ from app.services.finance import (
     calculate_streaks,
     calculate_savings_trend,
     calculate_wealth_buckets,
-    calculate_safe_to_spend
+    calculate_safe_to_spend,
+    calculate_income_intelligence,
 )
 
 router = APIRouter(
@@ -75,4 +76,11 @@ def safe_to_spend(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return calculate_safe_to_spend(db, current_user.id)      
+    return calculate_safe_to_spend(db, current_user.id)
+
+@router.get("/income-intelligence")
+def income_intelligence(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return calculate_income_intelligence(db, current_user.id)      

@@ -773,3 +773,187 @@ def calculate_safe_to_spend(db: Session, user_id: int):
             "days_remaining": (today.replace(day=28) + timedelta(days=4)).replace(day=1).day - today.day if today.month != 12 else 31 - today.day
         }
     }
+
+
+# ==========================================================
+# INCOME INTELLIGENCE
+# ==========================================================
+
+def calculate_income_intelligence(db: Session, user_id: int):
+    """
+    Analyze income patterns for irregular earners.
+    Returns stability score, feast/famine detection, buffer recommendations.
+    """
+    from statistics import mean, stdev
+    
+    today = date.today()
+    six_months_ago = today - timedelta(days=180)
+    three_months_ago = today - timedelta(days=90)
+    
+    # Get all income in last 6 months (excluding Bucket Returns)
+    all_income = (
+        db.query(Income)
+        .filter(
+            Income.user_id == user_id,
+            Income.date >= six_months_ago,
+            ~Income.source.ilike('%bucket return%')
+        )
+        .order_by(Income.date.asc())
+        .all()
+    )
+    
+    if not all_income:
+        return {
+            "stability_score": 0,
+            "stability_label": "No data yet",
+            "income_type": "unknown",
+            "monthly_averages": {},
+            "recommendations": [],
+            "has_data": False
+        }
+    
+    # Extract amounts and dates
+    amounts = [float(i.amount) for i in all_income]
+    dates = [i.date for i in all_income]
+    
+    # Monthly grouping
+    monthly_totals = {}
+    for inc in all_income:
+        month_key = inc.date.strftime("%Y-%m")
+        monthly_totals[month_key] = monthly_totals.get(month_key, 0) + float(inc.amount)
+    
+    monthly_values = list(monthly_totals.values())
+    
+    # 1. Stability Score (0-100)
+    if len(monthly_values) >= 2:
+        avg = mean(monthly_values)
+        if avg > 0:
+            try:
+                std = stdev(monthly_values)
+                cv = std / avg  # Coefficient of variation
+                stability = max(0, 100 - (cv * 100))
+            except:
+                stability = 100 if len(set(monthly_values)) == 1 else 50
+        else:
+            stability = 0
+    else:
+        stability = 50  # Not enough data
+    
+    stability = round(min(stability, 100))
+    
+    # 2. Stability Label
+    if stability >= 80:
+        stability_label = "Very stable (like salary)"
+    elif stability >= 60:
+        stability_label = "Fairly predictable"
+    elif stability >= 40:
+        stability_label = "Somewhat variable"
+    elif stability >= 20:
+        stability_label = "Highly irregular"
+    else:
+        stability_label = "Completely unpredictable"
+    
+    # 3. Income Type Detection
+    sources = list(set(i.source for i in all_income))
+    if len(sources) == 1 and sources[0] in ["Salary", "Business"]:
+        income_type = "single_source"
+    elif len(sources) >= 3:
+        income_type = "multiple_streams"
+    elif stability >= 70:
+        income_type = "stable_earner"
+    else:
+        income_type = "irregular_earner"
+    
+    # 4. Monthly Averages
+    avg_3month = round(mean(monthly_values[-3:]), 2) if len(monthly_values) >= 3 else round(mean(monthly_values), 2) if monthly_values else 0
+    avg_6month = round(mean(monthly_values), 2) if monthly_values else 0
+    all_time_avg = round(mean(monthly_values), 2) if monthly_values else 0
+    
+    # Conservative estimate (lowest of last 3 months)
+    conservative = round(min(monthly_values[-3:]), 2) if len(monthly_values) >= 3 else all_time_avg
+    
+    # 5. Feast/Famine Detection
+    if len(monthly_values) >= 3:
+        max_month = max(monthly_values)
+        min_month = min(monthly_values)
+        feast_famine_gap = round(((max_month - min_month) / avg_6month * 100), 1) if avg_6month > 0 else 0
+        is_feast_famine = feast_famine_gap > 50
+    else:
+        feast_famine_gap = 0
+        is_feast_famine = False
+    
+    # 6. Income Frequency (average days between income)
+    if len(dates) >= 2:
+        gaps = [(dates[i] - dates[i-1]).days for i in range(1, len(dates))]
+        avg_gap = round(mean(gaps), 1)
+    else:
+        avg_gap = 30
+    
+    # 7. Recommendations
+    recommendations = []
+    
+    if stability < 40:
+        recommendations.append({
+            "type": "warning",
+            "icon": "fa-exclamation-triangle",
+            "message": f"Your income varies significantly month to month. A conservative budget should be based on ₦{conservative:,.0f}/month, your lowest recent month."
+        })
+    
+    if is_feast_famine:
+        recommendations.append({
+            "type": "action",
+            "icon": "fa-piggy-bank",
+            "message": f"Feast/famine pattern detected. In good months, save extra to cover lean months. Your income swings by {feast_famine_gap}%."
+        })
+    
+    if income_type == "irregular_earner":
+        recommended_buffer = round(conservative * 3, 2)
+        recommendations.append({
+            "type": "target",
+            "icon": "fa-shield-alt",
+            "message": f"As an irregular earner, aim for ₦{recommended_buffer:,.0f} in your Emergency Buffer (3 months of conservative income)."
+        })
+    
+    if avg_gap > 14:
+        recommendations.append({
+            "type": "info",
+            "icon": "fa-calendar-alt",
+            "message": f"Your income arrives every {avg_gap:.0f} days on average. Plan your bill due dates around this cycle."
+        })
+    
+    # 8. Monthly breakdown for charts
+    monthly_breakdown = {
+        k: {
+            "month": k,
+            "total": round(v, 2),
+            "vs_average": round(v - all_time_avg, 2) if all_time_avg > 0 else 0
+        }
+        for k, v in sorted(monthly_totals.items())[-6:]
+    }
+    
+    return {
+        "stability_score": stability,
+        "stability_label": stability_label,
+        "income_type": income_type,
+        "source_count": len(sources),
+        "sources": sources,
+        "monthly_averages": {
+            "3_month": avg_3month,
+            "6_month": avg_6month,
+            "all_time": all_time_avg,
+            "conservative": conservative
+        },
+        "feast_famine": {
+            "is_pattern": is_feast_famine,
+            "gap_percentage": feast_famine_gap,
+            "highest_month": max(monthly_values) if monthly_values else 0,
+            "lowest_month": min(monthly_values) if monthly_values else 0
+        },
+        "frequency": {
+            "avg_days_between_income": avg_gap,
+            "total_entries": len(all_income)
+        },
+        "recommendations": recommendations,
+        "monthly_breakdown": monthly_breakdown,
+        "has_data": True
+    }    
