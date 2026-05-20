@@ -82,7 +82,7 @@ def mark_as_paid(db: Session, expense_id: int, user_id: int):
     db.add(expense)
     db.flush()
     
-    # Link expense to committed bill
+    ### Link expense to committed bill
     committed.is_paid = True
     committed.expense_id = expense.id
     
