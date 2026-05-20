@@ -8,7 +8,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.limiter import limiter
-from app.routers import auth, income, expense, summary, buckets
+from app.routers import auth, income, expense, summary, buckets, committed
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ app.include_router(income.router)
 app.include_router(expense.router)
 app.include_router(summary.router)
 app.include_router(buckets.router)
+app.include_router(committed.router)
 
 # Health check
 @app.get("/")
