@@ -659,3 +659,117 @@ def calculate_savings_trend(db: Session, user_id: int):
             "message": trend_message
         }
     }
+
+# ==========================================================
+# SAFE TO SPEND (NEW)
+# ==========================================================
+
+def calculate_safe_to_spend(db: Session, user_id: int):
+    """
+    Safe to Spend = Monthly Income - Monthly Expenses 
+                    - Upcoming Committed Expenses 
+                    - Bucket Protected Money
+    """
+    from app.models.committed_expense import CommittedExpense
+    
+    today = date.today()
+    month_start = today.replace(day=1)
+    next_30_days = today + timedelta(days=30)
+    
+    # Monthly income so far
+    total_income = _to_decimal(
+        db.query(func.coalesce(func.sum(Income.amount), 0))
+        .filter(Income.user_id == user_id, Income.date >= month_start)
+        .scalar()
+    )
+    
+    # Monthly expenses so far
+    total_expense = _to_decimal(
+        db.query(func.coalesce(func.sum(Expense.amount), 0))
+        .filter(Expense.user_id == user_id, Expense.date >= month_start)
+        .scalar()
+    )
+    
+    liquid = total_income - total_expense
+    
+    # Upcoming committed expenses (unpaid, due within 30 days)
+    committed = _to_decimal(
+        db.query(func.coalesce(func.sum(CommittedExpense.amount), 0))
+        .filter(
+            CommittedExpense.user_id == user_id,
+            CommittedExpense.is_paid == False,
+            CommittedExpense.due_date <= next_30_days
+        )
+        .scalar()
+    )
+    
+    # Money locked in buckets
+    bucket_protected = _to_decimal(Decimal("0.00"))
+    bucket_configs = ["family", "freedom_fund", "emergency_buffer", "asset_building"]
+    for bucket_name in bucket_configs:
+        allocations = _to_decimal(
+            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+            .filter(
+                BucketActivity.user_id == user_id,
+                BucketActivity.bucket_name == bucket_name,
+                BucketActivity.activity_type == ActivityType.allocation
+            )
+            .scalar()
+        )
+        transfers_in = _to_decimal(
+            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+            .filter(
+                BucketActivity.user_id == user_id,
+                BucketActivity.bucket_name == bucket_name,
+                BucketActivity.activity_type == ActivityType.transfer_in
+            )
+            .scalar()
+        )
+        withdrawals = _to_decimal(
+            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+            .filter(
+                BucketActivity.user_id == user_id,
+                BucketActivity.bucket_name == bucket_name,
+                BucketActivity.activity_type.in_([
+                    ActivityType.withdrawal_transfer,
+                    ActivityType.withdrawal_expense
+                ])
+            )
+            .scalar()
+        )
+        transfers_out = _to_decimal(
+            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+            .filter(
+                BucketActivity.user_id == user_id,
+                BucketActivity.bucket_name == bucket_name,
+                BucketActivity.activity_type == ActivityType.transfer_out
+            )
+            .scalar()
+        )
+        bucket_balance = allocations + transfers_in - withdrawals - transfers_out
+        if bucket_balance > 0:
+            bucket_protected += bucket_balance
+    
+    safe_to_spend = liquid - committed - bucket_protected
+    
+    # Status
+    if safe_to_spend > 10000:
+        status = "safe"
+    elif safe_to_spend > 1000:
+        status = "caution"
+    else:
+        status = "danger"
+    
+    return {
+        "safe_to_spend": float(safe_to_spend),
+        "status": status,
+        "breakdown": {
+            "liquid": float(liquid),
+            "committed_expenses": float(committed),
+            "bucket_protected": float(bucket_protected)
+        },
+        "context": {
+            "month_label": today.strftime("%B %Y"),
+            "days_remaining": (today.replace(day=28) + timedelta(days=4)).replace(day=1).day - today.day if today.month != 12 else 31 - today.day
+        }
+    }

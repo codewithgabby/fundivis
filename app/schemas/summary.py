@@ -33,3 +33,9 @@ class StreakResponse(BaseModel):
     longest_streak: int
     tracked_today: bool
     last_tracked_date: Optional[date]
+
+class SafeToSpendResponse(BaseModel):
+    safe_to_spend: float
+    status: str  # "safe", "caution", "danger"
+    breakdown: dict
+    context: dict    
