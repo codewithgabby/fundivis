@@ -473,7 +473,7 @@ def calculate_wealth_buckets(db: Session, user_id: int):
             "unallocated": {
                 "amount": 0,
                 "percentage": 0,
-                "label": "❓ Unallocated"
+                "label": '<i class="fas fa-question-circle"></i> Unallocated'
             },
             "total_expenses": float(total_balance),
             "month_label": today.strftime("%B %Y"),
@@ -564,7 +564,7 @@ def calculate_wealth_buckets(db: Session, user_id: int):
             "unallocated": {
                 "amount": float(unallocated_total),
                 "percentage": calc_pct(unallocated_total),
-                "label": "❓ Unallocated"
+                "label": '<i class="fas fa-question-circle"></i> Unallocated'
             },
             "total_expenses": float(total_expenses),
             "month_label": today.strftime("%B %Y"),
