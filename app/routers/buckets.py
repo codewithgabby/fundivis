@@ -10,14 +10,20 @@ from app.schemas.bucket import (
     BucketWithdraw,
     BucketTransfer,
     BucketActivityResponse,
-    BucketsSummaryResponse
+    BucketsSummaryResponse,
+    CustomBucketCreate,
+    CustomBucketResponse,
+    BucketDeleteResponse
 )
 from app.services.bucket_service import (
     allocate_funds,
     withdraw_from_bucket,
     transfer_between_buckets,
     get_bucket_history,
-    calculate_all_bucket_balances
+    calculate_all_bucket_balances,
+    create_custom_bucket,
+    get_custom_buckets,
+    delete_custom_bucket
 )
 
 router = APIRouter(
@@ -101,3 +107,38 @@ def balances(
 ):
     """Get current balances for all buckets calculated from activity log."""
     return calculate_all_bucket_balances(db, current_user.id)
+
+@router.post("/custom", response_model=CustomBucketResponse)
+def create_custom(
+    data: CustomBucketCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a custom wealth bucket."""
+    try:
+        return create_custom_bucket(db, current_user.id, data.bucket_name, data.label)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/custom", response_model=list[CustomBucketResponse])
+def list_custom(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List all custom buckets."""
+    return get_custom_buckets(db, current_user.id)
+
+
+@router.delete("/custom/{bucket_name}", response_model=BucketDeleteResponse)
+def delete_custom(
+    bucket_name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a custom bucket and all its activity."""
+    try:
+        delete_custom_bucket(db, current_user.id, bucket_name)
+        return {"message": f"Bucket '{bucket_name}' deleted", "bucket_name": bucket_name}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

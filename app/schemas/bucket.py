@@ -5,17 +5,12 @@ from decimal import Decimal
 from app.models.bucket_activity import ActivityType
 
 
-# Valid bucket names
-BUCKET_NAMES = Literal[
-    "family",
-    "freedom_fund", 
-    "emergency_buffer",
-    "asset_building"
-]
+# Allow any bucket name (default + custom)
+BUCKET_NAMES = str
 
 
 class BucketAllocate(BaseModel):
-    bucket_name: BUCKET_NAMES
+    bucket_name: str
     amount: Decimal = Field(gt=0, description="Amount to allocate")
     date: date
     description: Optional[str] = Field(None, max_length=255)
@@ -28,7 +23,7 @@ class BucketAllocate(BaseModel):
 
 
 class BucketWithdraw(BaseModel):
-    bucket_name: BUCKET_NAMES
+    bucket_name: str
     amount: Decimal = Field(gt=0)
     withdrawal_type: Literal["transfer_only", "use_as_expense"]
     date: date
@@ -42,8 +37,8 @@ class BucketWithdraw(BaseModel):
 
 
 class BucketTransfer(BaseModel):
-    from_bucket: BUCKET_NAMES
-    to_bucket: BUCKET_NAMES
+    from_bucket: str
+    to_bucket: str
     amount: Decimal = Field(gt=0)
     date: date
     description: Optional[str] = Field(None, max_length=255)
@@ -84,9 +79,29 @@ class BucketBalance(BaseModel):
     total_withdrawn: float
     total_transferred_out: float
     total_transferred_in: float
+    is_default: bool = True
 
 
 class BucketsSummaryResponse(BaseModel):
     buckets: dict[str, BucketBalance]
     total_balance: float
     month_label: str
+
+class CustomBucketCreate(BaseModel):
+    bucket_name: str = Field(min_length=1, max_length=50, pattern=r'^[a-z0-9_]+$')
+    label: str = Field(min_length=1, max_length=100)
+
+
+class CustomBucketResponse(BaseModel):
+    id: int
+    bucket_name: str
+    label: str
+    created_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class BucketDeleteResponse(BaseModel):
+    message: str
+    bucket_name: str    

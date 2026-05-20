@@ -7,6 +7,7 @@ from typing import List, Dict, Optional
 from app.models.bucket_activity import BucketActivity, ActivityType
 from app.models.expense import Expense
 from app.models.income import Income
+from app.models.custom_bucket import CustomBucket
 from app.schemas.bucket import (
     BucketAllocate,
     BucketWithdraw, 
@@ -252,23 +253,91 @@ def get_bucket_history(
     )
 
 
+
+
+def create_custom_bucket(db: Session, user_id: int, bucket_name: str, label: str) -> CustomBucket:
+    """Create a new custom bucket for the user."""
+    
+    # Check if already exists
+    existing = db.query(CustomBucket).filter(
+        CustomBucket.user_id == user_id,
+        CustomBucket.bucket_name == bucket_name
+    ).first()
+    
+    if existing:
+        raise ValueError(f"Bucket '{bucket_name}' already exists")
+    
+    custom = CustomBucket(
+        user_id=user_id,
+        bucket_name=bucket_name,
+        label=label
+    )
+    db.add(custom)
+    db.commit()
+    db.refresh(custom)
+    return custom
+
+
+def get_custom_buckets(db: Session, user_id: int) -> List[CustomBucket]:
+    """Get all custom buckets for a user."""
+    return db.query(CustomBucket).filter(CustomBucket.user_id == user_id).all()
+
+
+def delete_custom_bucket(db: Session, user_id: int, bucket_name: str) -> bool:
+    """Delete a custom bucket. Cannot delete default buckets."""
+    
+    DEFAULT_BUCKETS = ["family", "freedom_fund", "emergency_buffer", "asset_building"]
+    
+    if bucket_name in DEFAULT_BUCKETS:
+        raise ValueError("Cannot delete default buckets")
+    
+    # Delete from custom_buckets table
+    custom = db.query(CustomBucket).filter(
+        CustomBucket.user_id == user_id,
+        CustomBucket.bucket_name == bucket_name
+    ).first()
+    
+    if not custom:
+        raise ValueError(f"Bucket '{bucket_name}' not found")
+    
+    db.delete(custom)
+    
+    # Delete all activities for this bucket
+    db.query(BucketActivity).filter(
+        BucketActivity.user_id == user_id,
+        BucketActivity.bucket_name == bucket_name
+    ).delete()
+    
+    db.commit()
+    return True
+
+
 def calculate_all_bucket_balances(db: Session, user_id: int) -> Dict:
-    """Calculate balances for all buckets from activity log."""
+    """Calculate balances for all buckets from activity log, including custom buckets."""
     
     today = date.today()
     
+    # Default buckets
     bucket_configs = {
-        "family": {"label": '<i class="fas fa-home"></i> Family', "color": "blue"},
-        "freedom_fund": {"label": '<i class="fas fa-dove"></i> Freedom Fund', "color": "purple"},
-        "emergency_buffer": {"label": '<i class="fas fa-shield-alt"></i> Emergency Buffer', "color": "red"},
-        "asset_building": {"label": '<i class="fas fa-chart-line"></i> Asset Building', "color": "emerald"}
+        "family": {"label": '<i class="fas fa-home"></i> Family', "color": "blue", "is_default": True},
+        "freedom_fund": {"label": '<i class="fas fa-dove"></i> Freedom Fund', "color": "purple", "is_default": True},
+        "emergency_buffer": {"label": '<i class="fas fa-shield-alt"></i> Emergency Buffer', "color": "red", "is_default": True},
+        "asset_building": {"label": '<i class="fas fa-chart-line"></i> Asset Building', "color": "emerald", "is_default": True}
     }
+    
+    # Add custom buckets
+    custom_buckets = db.query(CustomBucket).filter(CustomBucket.user_id == user_id).all()
+    for cb in custom_buckets:
+        bucket_configs[cb.bucket_name] = {
+            "label": cb.label,
+            "color": "gray",
+            "is_default": False
+        }
     
     buckets = {}
     total_balance = Decimal("0.00")
     
     for bucket_name, config in bucket_configs.items():
-        # Get all activity for this bucket
         allocations = _to_decimal(
             db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
             .filter(
@@ -289,22 +358,15 @@ def calculate_all_bucket_balances(db: Session, user_id: int) -> Dict:
             .scalar()
         )
         
-        withdrawals_transfer = _to_decimal(
+        withdrawals = _to_decimal(
             db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
             .filter(
                 BucketActivity.user_id == user_id,
                 BucketActivity.bucket_name == bucket_name,
-                BucketActivity.activity_type == ActivityType.withdrawal_transfer
-            )
-            .scalar()
-        )
-        
-        withdrawals_expense = _to_decimal(
-            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
-            .filter(
-                BucketActivity.user_id == user_id,
-                BucketActivity.bucket_name == bucket_name,
-                BucketActivity.activity_type == ActivityType.withdrawal_expense
+                BucketActivity.activity_type.in_([
+                    ActivityType.withdrawal_transfer,
+                    ActivityType.withdrawal_expense
+                ])
             )
             .scalar()
         )
@@ -319,16 +381,17 @@ def calculate_all_bucket_balances(db: Session, user_id: int) -> Dict:
             .scalar()
         )
         
-        balance = allocations + transfers_in - withdrawals_transfer - withdrawals_expense - transfers_out
+        balance = allocations + transfers_in - withdrawals - transfers_out
         
         buckets[bucket_name] = {
             "bucket_name": bucket_name,
             "label": config["label"],
             "balance": float(balance),
             "total_allocated": float(allocations),
-            "total_withdrawn": float(withdrawals_transfer + withdrawals_expense),
+            "total_withdrawn": float(withdrawals),
             "total_transferred_out": float(transfers_out),
-            "total_transferred_in": float(transfers_in)
+            "total_transferred_in": float(transfers_in),
+            "is_default": config["is_default"]
         }
         
         total_balance += balance
