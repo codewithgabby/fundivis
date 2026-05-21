@@ -25,7 +25,6 @@ class BucketAllocate(BaseModel):
 class BucketWithdraw(BaseModel):
     bucket_name: str
     amount: Decimal = Field(gt=0)
-    withdrawal_type: Literal["transfer_only", "use_as_expense"]
     date: date
     description: Optional[str] = Field(None, max_length=255)
     
@@ -34,7 +33,6 @@ class BucketWithdraw(BaseModel):
         if v.as_tuple().exponent < -2:
             raise ValueError('Amount cannot have more than 2 decimal places')
         return v
-
 
 class BucketTransfer(BaseModel):
     from_bucket: str

@@ -52,7 +52,7 @@ def withdraw(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Withdraw from a bucket. 'transfer_only' doesn't create expense, 'use_as_expense' does."""
+    """Withdraw from a bucket. Moves protected money back to liquid cash. Does NOT create an expense."""
     try:
         activity = withdraw_from_bucket(db, current_user.id, data)
         return activity

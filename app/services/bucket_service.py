@@ -105,7 +105,16 @@ def allocate_funds(db: Session, user_id: int, data: BucketAllocate) -> BucketAct
 
 
 def withdraw_from_bucket(db: Session, user_id: int, data: BucketWithdraw) -> BucketActivity:
-    """Withdraw from a bucket. Two types: transfer_only or use_as_expense."""
+    """
+    Pure capital reclassification: move money from Protected Wealth → Liquid Cash.
+    
+    Withdrawals are NOT expenses. They do NOT create expense records.
+    They simply return protected money back to available liquid cash.
+    
+    Creates:
+      - 1 BucketActivity (withdrawal_transfer)
+      - 1 Income (Bucket Return) to restore liquidity
+    """
     
     # Check balance first
     current_balance = _get_bucket_balance(db, user_id, data.bucket_name)
@@ -116,57 +125,33 @@ def withdraw_from_bucket(db: Session, user_id: int, data: BucketWithdraw) -> Buc
             f"Available: ₦{current_balance:,.2f}, Requested: ₦{data.amount:,.2f}"
         )
     
-    activity_type = (
-        ActivityType.withdrawal_transfer 
-        if data.withdrawal_type == "transfer_only" 
-        else ActivityType.withdrawal_expense
-    )
-    
+    # Create the withdrawal activity
     activity = BucketActivity(
         user_id=user_id,
         bucket_name=data.bucket_name,
-        activity_type=activity_type,
+        activity_type=ActivityType.withdrawal_transfer,
         amount=data.amount,
-        description=data.description or f"Withdrew ₦{data.amount:,.2f} from {data.bucket_name}",
+        description=data.description or f"Returned ₦{data.amount:,.2f} from {data.bucket_name} to available cash",
         date=data.date
     )
-    
-    if data.withdrawal_type == "transfer_only":
-        # Create INCOME to return money to available balance
-        
-        income = Income(
-            user_id=user_id,
-            amount=data.amount,
-            source=f"Bucket Return ({data.bucket_name})",
-            payment_method="Bank Transfer",
-            date=data.date,
-            description=f"Un-allocated from {data.bucket_name}: {data.description or 'Transfer only withdrawal'}"
-        )
-        db.add(income)
-        db.flush()
-    
-    elif data.withdrawal_type == "use_as_expense":
-        # Create expense record for actual spending
-        expense = Expense(
-            user_id=user_id,
-            amount=data.amount,
-            category="Wealth Bucket Withdrawal",
-            necessity_type="non_essential",
-            wealth_bucket=data.bucket_name,
-            payment_method="Bank Transfer",
-            date=data.date,
-            description=f"Withdrawn from {data.bucket_name}: {data.description or 'Bucket withdrawal'}"
-        )
-        db.add(expense)
-        db.flush()
-        activity.expense_id = expense.id
-    
     db.add(activity)
+    
+    # Create INCOME to return money to available liquid balance
+    # Tagged as "Bucket Return" so the frontend can filter it from earned income
+    income = Income(
+        user_id=user_id,
+        amount=data.amount,
+        source=f"Bucket Return ({data.bucket_name})",
+        payment_method="Bank Transfer",
+        date=data.date,
+        description=f"Returned from {data.bucket_name}: {data.description or 'Bucket withdrawal'}"
+    )
+    db.add(income)
+    
     db.commit()
     db.refresh(activity)
     
     return activity
-
 
 def transfer_between_buckets(db: Session, user_id: int, data: BucketTransfer) -> Dict:
     """Transfer funds from one bucket to another."""
