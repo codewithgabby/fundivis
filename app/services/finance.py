@@ -712,12 +712,16 @@ def calculate_safe_to_spend(db: Session, user_id: int):
     month_start = today.replace(day=1)
     next_30_days = today + timedelta(days=30)
     
-    # Monthly income so far
+   # Monthly income so far — EXCLUDING bucket returns (internal capital movement)
     total_income = _to_decimal(
-        db.query(func.coalesce(func.sum(Income.amount), 0))
-        .filter(Income.user_id == user_id, Income.date >= month_start)
+       db.query(func.coalesce(func.sum(Income.amount), 0))
+       .filter(
+           Income.user_id == user_id, 
+           Income.date >= month_start,
+           ~Income.source.ilike('%bucket return%')
+        )
         .scalar()
-    )
+)
     
     # Monthly REAL expenses (excludes allocations — allocations no longer create expenses)
     total_expense = _to_decimal(
