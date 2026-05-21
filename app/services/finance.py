@@ -769,11 +769,11 @@ def calculate_safe_to_spend(db: Session, user_id: int):
     else:
         status = "danger"
     
-    return {
+        return {
         "safe_to_spend": float(safe_to_spend),
         "status": status,
         "breakdown": {
-            "liquid": float(liquid),
+            "liquid": float(liquid - bucket_allocated),  # Subtract buckets from cash on hand
             "committed_expenses": float(committed),
             "bucket_protected": float(bucket_allocated)
         },
