@@ -703,62 +703,7 @@ def calculate_safe_to_spend(db: Session, user_id: int):
         .scalar()
     )
     
-        # Money locked in buckets (ALL buckets including custom ones)
-    bucket_protected = _to_decimal(Decimal("0.00"))
-    
-    # Get all unique bucket names that have activity
-    all_bucket_names = (
-        db.query(BucketActivity.bucket_name)
-        .filter(BucketActivity.user_id == user_id)
-        .distinct()
-        .all()
-    )
-    
-    for (bucket_name,) in all_bucket_names:
-        allocations = _to_decimal(
-            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
-            .filter(
-                BucketActivity.user_id == user_id,
-                BucketActivity.bucket_name == bucket_name,
-                BucketActivity.activity_type == ActivityType.allocation
-            )
-            .scalar()
-        )
-        transfers_in = _to_decimal(
-            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
-            .filter(
-                BucketActivity.user_id == user_id,
-                BucketActivity.bucket_name == bucket_name,
-                BucketActivity.activity_type == ActivityType.transfer_in
-            )
-            .scalar()
-        )
-        withdrawals = _to_decimal(
-            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
-            .filter(
-                BucketActivity.user_id == user_id,
-                BucketActivity.bucket_name == bucket_name,
-                BucketActivity.activity_type.in_([
-                    ActivityType.withdrawal_transfer,
-                    ActivityType.withdrawal_expense
-                ])
-            )
-            .scalar()
-        )
-        transfers_out = _to_decimal(
-            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
-            .filter(
-                BucketActivity.user_id == user_id,
-                BucketActivity.bucket_name == bucket_name,
-                BucketActivity.activity_type == ActivityType.transfer_out
-            )
-            .scalar()
-        )
-        bucket_balance = allocations + transfers_in - withdrawals - transfers_out
-        if bucket_balance > 0:
-            bucket_protected += bucket_balance
-    
-    safe_to_spend = liquid - committed - bucket_protected
+    safe_to_spend = liquid - committed
     
     # Status
     if safe_to_spend > 10000:
@@ -774,7 +719,7 @@ def calculate_safe_to_spend(db: Session, user_id: int):
         "breakdown": {
             "liquid": float(liquid),
             "committed_expenses": float(committed),
-            "bucket_protected": float(bucket_protected)
+            "bucket_protected": 0
         },
         "context": {
             "month_label": today.strftime("%B %Y"),

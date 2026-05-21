@@ -85,9 +85,9 @@ def _get_bucket_balance(db: Session, user_id: int, bucket_name: str) -> Decimal:
 
 
 def allocate_funds(db: Session, user_id: int, data: BucketAllocate) -> BucketActivity:
-    """Allocate funds to a wealth bucket. Creates an expense to reflect money moved."""
+    """Allocate funds to a wealth bucket. This is intentional money assignment, NOT spending."""
     
-    # Create the bucket activity
+    # Create the bucket activity only — no expense
     activity = BucketActivity(
         user_id=user_id,
         bucket_name=data.bucket_name,
@@ -96,22 +96,6 @@ def allocate_funds(db: Session, user_id: int, data: BucketAllocate) -> BucketAct
         description=data.description or f"Allocated ₦{data.amount:,.2f} to {data.bucket_name}",
         date=data.date
     )
-    
-    # Create an expense to reflect money being "locked away" in the bucket
-    expense = Expense(
-        user_id=user_id,
-        amount=data.amount,
-        category="Wealth Bucket Allocation",
-        necessity_type="non_essential",
-        wealth_bucket=data.bucket_name,
-        payment_method="Bank Transfer",
-        date=data.date,
-        description=f"Allocated to {data.bucket_name}: {data.description or 'Bucket allocation'}"
-    )
-    db.add(expense)
-    db.flush()
-    
-    activity.expense_id = expense.id
     
     db.add(activity)
     db.commit()
