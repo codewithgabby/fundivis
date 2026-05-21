@@ -156,11 +156,48 @@ def calculate_monthly_summary(db: Session, user_id: int):
                 "Consider reviewing your recurring subscriptions."
             )
 
+       # Calculate allocated vs unallocated
+    bucket_allocated = _to_decimal(Decimal("0.00"))
+    all_bucket_names = (
+        db.query(BucketActivity.bucket_name)
+        .filter(BucketActivity.user_id == user_id)
+        .distinct()
+        .all()
+    )
+    for (bucket_name,) in all_bucket_names:
+        allocations = _to_decimal(
+            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+            .filter(BucketActivity.user_id == user_id, BucketActivity.bucket_name == bucket_name, BucketActivity.activity_type == ActivityType.allocation)
+            .scalar()
+        )
+        transfers_in = _to_decimal(
+            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+            .filter(BucketActivity.user_id == user_id, BucketActivity.bucket_name == bucket_name, BucketActivity.activity_type == ActivityType.transfer_in)
+            .scalar()
+        )
+        withdrawals = _to_decimal(
+            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+            .filter(BucketActivity.user_id == user_id, BucketActivity.bucket_name == bucket_name, BucketActivity.activity_type.in_([ActivityType.withdrawal_transfer, ActivityType.withdrawal_expense]))
+            .scalar()
+        )
+        transfers_out = _to_decimal(
+            db.query(func.coalesce(func.sum(BucketActivity.amount), 0))
+            .filter(BucketActivity.user_id == user_id, BucketActivity.bucket_name == bucket_name, BucketActivity.activity_type == ActivityType.transfer_out)
+            .scalar()
+        )
+        balance = allocations + transfers_in - withdrawals - transfers_out
+        if balance > 0:
+            bucket_allocated += balance
+    
+    unallocated_cash = savings - bucket_allocated
+    
     return {
         "total_income": total_income,
         "total_expense": total_expense,
         "savings": savings,
         "savings_rate": savings_rate,
+        "allocated_savings": bucket_allocated,  # Money in buckets
+        "unallocated_cash": unallocated_cash,    # Idle cash not yet structured
         "essential_spending": essential_spending,
         "non_essential_spending": non_essential_spending,
         "unclassified_spending": unclassified_spending,
@@ -168,7 +205,6 @@ def calculate_monthly_summary(db: Session, user_id: int):
         "contextual_messages": contextual_messages,
         "month_label": f"{month_name} {today.year}"
     }
-
 
 # ==========================================================
 # INSIGHTS (WITH DERIVED INSIGHTS ARRAY)
@@ -769,7 +805,7 @@ def calculate_safe_to_spend(db: Session, user_id: int):
     else:
         status = "danger"
     
-        return {
+    return {
         "safe_to_spend": float(safe_to_spend),
         "status": status,
         "breakdown": {
