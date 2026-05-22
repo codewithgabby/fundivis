@@ -891,7 +891,9 @@ def calculate_income_intelligence(db: Session, user_id: int):
     stability = round(min(stability, 100))
     
     # 2. Stability Label
-    if stability >= 80:
+    if len(monthly_values) < 2:
+        stability_label = "Learning your income patterns"
+    elif stability >= 80:
         stability_label = "Very stable (like salary)"
     elif stability >= 60:
         stability_label = "Fairly predictable"
@@ -963,7 +965,13 @@ def calculate_income_intelligence(db: Session, user_id: int):
             "message": f"As an irregular earner, aim for ₦{recommended_buffer:,.0f} in your Emergency Buffer (3 months of conservative income)."
         })
     
-    if avg_gap > 14:
+    if len(dates) < 2:
+        recommendations.append({
+            "type": "info",
+            "icon": "fa-calendar-alt",
+            "message": "Add more income history to understand your earning rhythm."
+        })
+    elif avg_gap > 14:
         recommendations.append({
             "type": "info",
             "icon": "fa-calendar-alt",
@@ -1004,5 +1012,6 @@ def calculate_income_intelligence(db: Session, user_id: int):
         },
         "recommendations": recommendations,
         "monthly_breakdown": monthly_breakdown,
-        "has_data": True
+        "has_data": True,
+        "has_enough_history": len(monthly_values) >= 2
     }    
