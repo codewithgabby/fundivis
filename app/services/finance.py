@@ -892,9 +892,10 @@ def calculate_income_intelligence(db: Session, user_id: int):
         else:
             stability = 0
     else:
-        stability = 50  # Not enough data
+        stability = None  # Not enough data — don't show fake score
     
-    stability = round(min(stability, 100))
+    if stability is not None:
+        stability = round(min(stability, 100))
     
     # 2. Stability Label
     if len(monthly_values) < 2:
@@ -965,7 +966,7 @@ def calculate_income_intelligence(db: Session, user_id: int):
     # 7. Recommendations
     recommendations = []
     
-    if stability < 40:
+    if stability is not None and stability < 40:
         recommendations.append({
             "type": "warning",
             "icon": "fa-exclamation-triangle",
@@ -979,7 +980,7 @@ def calculate_income_intelligence(db: Session, user_id: int):
             "message": f"Feast/famine pattern detected. In good months, save extra to cover lean months. Your income swings by {feast_famine_gap}%."
         })
     
-    if income_type == "irregular_earner" and has_earned_income:
+    if stability is not None and income_type == "irregular_earner" and has_earned_income:
         recommended_buffer = round(conservative * 3, 2)
         recommendations.append({
             "type": "target",
@@ -991,7 +992,7 @@ def calculate_income_intelligence(db: Session, user_id: int):
         recommendations.append({
             "type": "info",
             "icon": "fa-lightbulb",
-            "message": "Your income entries are mostly gifts or one-time inflows. Add earned income like Salary or Freelance for stronger insights."
+            "message": "More consistent income activity helps Fundivis understand your financial rhythm better."
         })
     
     if income_type == "building_profile":
