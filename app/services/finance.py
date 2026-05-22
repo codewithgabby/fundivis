@@ -834,6 +834,12 @@ def calculate_income_intelligence(db: Session, user_id: int):
     Returns stability score, feast/famine detection, buffer recommendations.
     """
     from statistics import mean, stdev
+
+    # Sources considered actual earned income (not one-time inflows)
+    EARNED_INCOME_SOURCES = [
+        "Salary", "Freelance", "Business", "Consultation",
+        "Contract", "Side Hustle"
+    ]
     
     today = date.today()
     six_months_ago = today - timedelta(days=180)
@@ -905,15 +911,31 @@ def calculate_income_intelligence(db: Session, user_id: int):
         stability_label = "Completely unpredictable"
     
     # 3. Income Type Detection
+    # Distinguish earned income from non-earned inflows (Gifts, Refunds, etc.)
     sources = list(set(i.source for i in all_income))
-    if len(sources) == 1 and sources[0] in ["Salary", "Business"]:
+    earned_sources = [s for s in sources if s in EARNED_INCOME_SOURCES]
+    non_earned_sources = [s for s in sources if s not in EARNED_INCOME_SOURCES]
+    
+    has_earned_income = len(earned_sources) > 0
+    has_multiple_earned = len(earned_sources) >= 2
+    
+    if not has_earned_income:
+        # User only has Gifts, Refunds, or other non-earned inflows
+        income_type = "non_earned_inflows"
+    elif len(earned_sources) == 1 and len(non_earned_sources) > 0:
+        # One earned source + supplemental inflows (e.g., Salary + Gift)
+        income_type = "supplemented_income"
+    elif len(earned_sources) == 1:
         income_type = "single_source"
-    elif len(sources) >= 3:
+    elif has_multiple_earned:
         income_type = "multiple_streams"
-    elif stability >= 70:
+    elif stability >= 70 and len(monthly_values) >= 2:
         income_type = "stable_earner"
-    else:
+    elif len(monthly_values) >= 2:
         income_type = "irregular_earner"
+    else:
+        # Not enough history to classify
+        income_type = "building_profile"
     
     # 4. Monthly Averages
     avg_3month = round(mean(monthly_values[-3:]), 2) if len(monthly_values) >= 3 else round(mean(monthly_values), 2) if monthly_values else 0
@@ -957,12 +979,26 @@ def calculate_income_intelligence(db: Session, user_id: int):
             "message": f"Feast/famine pattern detected. In good months, save extra to cover lean months. Your income swings by {feast_famine_gap}%."
         })
     
-    if income_type == "irregular_earner":
+    if income_type == "irregular_earner" and has_earned_income:
         recommended_buffer = round(conservative * 3, 2)
         recommendations.append({
             "type": "target",
             "icon": "fa-shield-alt",
             "message": f"As an irregular earner, aim for ₦{recommended_buffer:,.0f} in your Emergency Buffer (3 months of conservative income)."
+        })
+    
+    if income_type == "non_earned_inflows":
+        recommendations.append({
+            "type": "info",
+            "icon": "fa-lightbulb",
+            "message": "Your income entries are mostly gifts or one-time inflows. Add earned income like Salary or Freelance for stronger insights."
+        })
+    
+    if income_type == "building_profile":
+        recommendations.append({
+            "type": "info",
+            "icon": "fa-lightbulb",
+            "message": "Add a few more months of income history to build your earning profile."
         })
     
     if len(dates) < 2:
