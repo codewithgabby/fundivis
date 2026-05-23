@@ -439,6 +439,7 @@ def get_engagement_health(db: Session) -> Dict:
     inactive_7 = 0
     inactive_30 = 0
     never_active = 0
+    active_3plus = 0
     
     for (user_id,) in all_users:
         last_income = db.query(func.max(Income.date)).filter(Income.user_id == user_id).scalar()
@@ -455,12 +456,26 @@ def get_engagement_health(db: Session) -> Dict:
                 inactive_7 += 1
             elif days_inactive >= 3:
                 inactive_3 += 1
+        
+        # Count users active on 3+ distinct days this week
+        if last_active is not None:
+            days_active_this_week = db.query(func.count(func.distinct(Income.date))).filter(
+                Income.user_id == user_id,
+                Income.date >= today - timedelta(days=7)
+            ).scalar() or 0
+            expense_days = db.query(func.count(func.distinct(Expense.date))).filter(
+                Expense.user_id == user_id,
+                Expense.date >= today - timedelta(days=7)
+            ).scalar() or 0
+            if max(days_active_this_week, expense_days) >= 3:
+                active_3plus += 1
     
     return {
         "inactive_3_days": inactive_3,
         "inactive_7_days": inactive_7,
         "inactive_30_days": inactive_30,
         "never_active": never_active,
+        "active_3plus_days": active_3plus,
         "total_users": len(all_users)
     }
 
