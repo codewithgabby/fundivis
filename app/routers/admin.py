@@ -58,15 +58,3 @@ def financial_overview(
     """Get aggregate financial metrics."""
     return get_financial_metrics(db)
 
-@router.post("/setup-first-admin")
-def setup_first_admin(
-    email: str,
-    db: Session = Depends(get_db)
-):
-    """Temporary: Make a user admin. REMOVE AFTER USE."""
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    user.is_admin = True
-    db.commit()
-    return {"message": f"{email} is now an admin"}    
