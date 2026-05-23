@@ -9,6 +9,7 @@ from app.services.admin_analytics import (
     get_financial_metrics,
     get_engagement_metrics,
     get_user_list,
+    get_behavioral_intelligence
 )
 
 router = APIRouter(
@@ -58,3 +59,10 @@ def financial_overview(
     """Get aggregate financial metrics."""
     return get_financial_metrics(db)
 
+@router.get("/behavior/intelligence")
+def behavioral_intelligence(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin)
+):
+    """Get all behavioral intelligence metrics."""
+    return get_behavioral_intelligence(db)

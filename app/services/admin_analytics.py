@@ -294,3 +294,187 @@ def get_user_list(db: Session, skip: int = 0, limit: int = 50) -> List[Dict]:
         "limit": limit,
         "data": result
     }
+
+# ==========================================================
+# RETENTION ANALYTICS
+# ==========================================================
+
+def get_retention_metrics(db: Session) -> Dict:
+    """Day 1, Day 7, Day 30 retention rates."""
+    today = date.today()
+    
+    # All users who signed up at least N days ago
+    day1_cutoff = today - timedelta(days=1)
+    day7_cutoff = today - timedelta(days=7)
+    day30_cutoff = today - timedelta(days=30)
+    
+    # Users eligible for each retention window
+    eligible_day1 = db.query(User.id).filter(User.created_at <= day1_cutoff).all()
+    eligible_day7 = db.query(User.id).filter(User.created_at <= day7_cutoff).all()
+    eligible_day30 = db.query(User.id).filter(User.created_at <= day30_cutoff).all()
+    
+    def count_returned(user_ids, within_days):
+        if not user_ids:
+            return 0, 0
+        cutoff = today - timedelta(days=within_days)
+        ids = [u[0] for u in user_ids]
+        returned = db.query(func.count(func.distinct(Income.user_id))).filter(
+            Income.user_id.in_(ids),
+            Income.date >= cutoff
+        ).scalar() or 0
+        # Also check expenses
+        returned_exp = db.query(func.count(func.distinct(Expense.user_id))).filter(
+            Expense.user_id.in_(ids),
+            Expense.date >= cutoff
+        ).scalar() or 0
+        return max(returned, returned_exp), len(ids)
+    
+    d1_returned, d1_total = count_returned(eligible_day1, 1)
+    d7_returned, d7_total = count_returned(eligible_day7, 7)
+    d30_returned, d30_total = count_returned(eligible_day30, 30)
+    
+    return {
+        "day1": {"returned": d1_returned, "total": d1_total, "rate": round((d1_returned / d1_total * 100), 1) if d1_total > 0 else 0},
+        "day7": {"returned": d7_returned, "total": d7_total, "rate": round((d7_returned / d7_total * 100), 1) if d7_total > 0 else 0},
+        "day30": {"returned": d30_returned, "total": d30_total, "rate": round((d30_returned / d30_total * 100), 1) if d30_total > 0 else 0},
+    }
+
+
+# ==========================================================
+# STREAK DISTRIBUTION
+# ==========================================================
+
+def get_streak_distribution(db: Session) -> Dict:
+    """Distribution of user tracking streaks."""
+    from app.services.finance import calculate_streaks
+    
+    all_users = db.query(User.id).all()
+    
+    buckets = {"0": 0, "1-3": 0, "4-7": 0, "7-30": 0, "30+": 0}
+    
+    for (user_id,) in all_users:
+        try:
+            streak_data = calculate_streaks(db, user_id)
+            s = streak_data["current_streak"]
+            if s == 0:
+                buckets["0"] += 1
+            elif s <= 3:
+                buckets["1-3"] += 1
+            elif s <= 7:
+                buckets["4-7"] += 1
+            elif s <= 30:
+                buckets["7-30"] += 1
+            else:
+                buckets["30+"] += 1
+        except:
+            buckets["0"] += 1
+    
+    return {"streak_distribution": buckets, "total_users": len(all_users)}
+
+
+# ==========================================================
+# SAFE-TO-SPEND DISTRIBUTION
+# ==========================================================
+
+def get_sts_distribution(db: Session) -> Dict:
+    """Distribution of Safe to Spend across users."""
+    from app.services.finance import calculate_safe_to_spend
+    
+    all_users = db.query(User.id).all()
+    
+    buckets = {"negative": 0, "0-5000": 0, "5000-20000": 0, "20000+": 0}
+    
+    for (user_id,) in all_users:
+        try:
+            sts_data = calculate_safe_to_spend(db, user_id)
+            sts = sts_data["safe_to_spend"]
+            if sts < 0:
+                buckets["negative"] += 1
+            elif sts < 5000:
+                buckets["0-5000"] += 1
+            elif sts < 20000:
+                buckets["5000-20000"] += 1
+            else:
+                buckets["20000+"] += 1
+        except:
+            buckets["0-5000"] += 1
+    
+    return {"sts_distribution": buckets, "total_users": len(all_users)}
+
+
+# ==========================================================
+# ONBOARDING FUNNEL
+# ==========================================================
+
+def get_onboarding_funnel(db: Session) -> Dict:
+    """Track how many users complete each onboarding step."""
+    total_users = db.query(func.count(User.id)).scalar() or 1
+    
+    added_income = db.query(func.count(func.distinct(Income.user_id))).scalar() or 0
+    added_expense = db.query(func.count(func.distinct(Expense.user_id))).scalar() or 0
+    created_bucket = db.query(func.count(func.distinct(BucketActivity.user_id))).scalar() or 0
+    added_bill = db.query(func.count(func.distinct(CommittedExpense.user_id))).scalar() or 0
+    
+    return {
+        "steps": [
+            {"label": "Signed up", "count": total_users, "rate": 100},
+            {"label": "Added income", "count": added_income, "rate": round((added_income / total_users) * 100, 1)},
+            {"label": "Added expense", "count": added_expense, "rate": round((added_expense / total_users) * 100, 1)},
+            {"label": "Created bucket", "count": created_bucket, "rate": round((created_bucket / total_users) * 100, 1)},
+            {"label": "Added bill", "count": added_bill, "rate": round((added_bill / total_users) * 100, 1)},
+        ]
+    }
+
+
+# ==========================================================
+# ENGAGEMENT HEALTH
+# ==========================================================
+
+def get_engagement_health(db: Session) -> Dict:
+    """Identify users by inactivity segments."""
+    today = date.today()
+    all_users = db.query(User.id).all()
+    
+    inactive_3 = 0
+    inactive_7 = 0
+    inactive_30 = 0
+    never_active = 0
+    
+    for (user_id,) in all_users:
+        last_income = db.query(func.max(Income.date)).filter(Income.user_id == user_id).scalar()
+        last_expense = db.query(func.max(Expense.date)).filter(Expense.user_id == user_id).scalar()
+        last_active = max(last_income, last_expense) if last_income or last_expense else None
+        
+        if last_active is None:
+            never_active += 1
+        else:
+            days_inactive = (today - last_active).days
+            if days_inactive >= 30:
+                inactive_30 += 1
+            elif days_inactive >= 7:
+                inactive_7 += 1
+            elif days_inactive >= 3:
+                inactive_3 += 1
+    
+    return {
+        "inactive_3_days": inactive_3,
+        "inactive_7_days": inactive_7,
+        "inactive_30_days": inactive_30,
+        "never_active": never_active,
+        "total_users": len(all_users)
+    }
+
+
+# ==========================================================
+# BEHAVIORAL INTELLIGENCE (AGGREGATED)
+# ==========================================================
+
+def get_behavioral_intelligence(db: Session) -> Dict:
+    """All behavioral metrics in one call."""
+    return {
+        "retention": get_retention_metrics(db),
+        "streaks": get_streak_distribution(db),
+        "sts_distribution": get_sts_distribution(db),
+        "onboarding": get_onboarding_funnel(db),
+        "engagement_health": get_engagement_health(db),
+    }    
