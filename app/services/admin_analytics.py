@@ -1,6 +1,14 @@
 """
 Behavioral analytics aggregation for the Fundivis admin dashboard.
 All queries are read-only. No user-level financial data is exposed.
+
+ANALYTICS DEFINITIONS:
+  Active User: A user who has logged at least one income OR expense record.
+  Last Active: The most recent date of any income or expense record.
+  Retention: A user "returned" if they logged any transaction in the window.
+  Streak: Consecutive days with at least one transaction (income or expense).
+  STS: Safe to Spend = monthly earned income - expenses - bucket allocations - committed bills.
+  Low STS: Safe to Spend below ₦1,000.
 """
 
 from datetime import date, timedelta
