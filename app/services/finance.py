@@ -50,13 +50,13 @@ def calculate_monthly_summary(db: Session, user_id: int):
 
     total_income = _to_decimal(
         db.query(func.coalesce(func.sum(Income.amount), 0))
-        .filter(Income.user_id == user_id, Income.date >= month_start)
+        .filter(Income.user_id == user_id, Income.date >= month_start, Income.date <= today)
         .scalar()
     )
 
     total_expense = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
-        .filter(Expense.user_id == user_id, Expense.date >= month_start)
+        .filter(Expense.user_id == user_id, Expense.date >= month_start, Expense.date <= today)
         .scalar()
     )
 
@@ -215,14 +215,14 @@ def calculate_insights(db: Session, user_id: int):
     month_start = today.replace(day=1)
 
     total_income = _to_decimal(
-        db.query(func.coalesce(func.sum(Income.amount), 0))
-        .filter(Income.user_id == user_id, Income.date >= month_start)
-        .scalar()
-    )
+    db.query(func.coalesce(func.sum(Income.amount), 0))
+    .filter(Income.user_id == user_id, Income.date >= month_start, Income.date <= today)
+    .scalar()
+)
 
     total_expense = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
-        .filter(Expense.user_id == user_id, Expense.date >= month_start)
+        .filter(Expense.user_id == user_id, Expense.date >= month_start, Expense.date <= today)
         .scalar()
     )
 
@@ -358,16 +358,17 @@ def calculate_insights(db: Session, user_id: int):
 # ==========================================================
 
 def calculate_streaks(db: Session, user_id: int):
+    today = date.today()
     income_dates = (
-        db.query(Income.date)
-        .filter(Income.user_id == user_id)
-        .distinct()
-        .all()
+       db.query(Income.date)
+       .filter(Income.user_id == user_id, Income.date <= today)
+       .distinct()
+       .all()
     )
 
     expense_dates = (
         db.query(Expense.date)
-        .filter(Expense.user_id == user_id)
+        .filter(Expense.user_id == user_id, Expense.date <= today)
         .distinct()
         .all()
     )
@@ -847,15 +848,16 @@ def calculate_income_intelligence(db: Session, user_id: int):
     
     # Get all income in last 6 months (excluding Bucket Returns)
     all_income = (
-        db.query(Income)
-        .filter(
-            Income.user_id == user_id,
-            Income.date >= six_months_ago,
-            ~Income.source.ilike('%bucket return%')
-        )
-        .order_by(Income.date.asc())
-        .all()
+    db.query(Income)
+    .filter(
+        Income.user_id == user_id,
+        Income.date >= six_months_ago,
+        Income.date <= today,
+        ~Income.source.ilike('%bucket return%')
     )
+    .order_by(Income.date.asc())
+    .all()
+)
     
     if not all_income:
         return {

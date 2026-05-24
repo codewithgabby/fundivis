@@ -72,11 +72,13 @@ def get_user_metrics(db: Session) -> Dict:
     
     # Users active this week
     active_week_income = db.query(Income.user_id).filter(
-        Income.date >= week_ago
+        Income.date >= week_ago,
+        Income.date <= today
     ).distinct().subquery()
-    
+
     active_week_expense = db.query(Expense.user_id).filter(
-        Expense.date >= week_ago
+        Expense.date >= week_ago,
+        Expense.date <= today
     ).distinct().subquery()
     
     active_this_week = db.query(func.count(func.distinct(
@@ -118,14 +120,14 @@ def get_financial_metrics(db: Session) -> Dict:
     # Total income tracked this month
     total_income = _to_decimal(
         db.query(func.coalesce(func.sum(Income.amount), 0))
-        .filter(Income.date >= month_start)
+        .filter(Income.date >= month_start, Income.date <= today)
         .scalar()
     )
     
     # Total expenses this month
     total_expenses = _to_decimal(
         db.query(func.coalesce(func.sum(Expense.amount), 0))
-        .filter(Expense.date >= month_start)
+        .filter(Expense.date >= month_start, Expense.date <= today)
         .scalar()
     )
     
@@ -274,11 +276,11 @@ def get_user_list(db: Session, skip: int = 0, limit: int = 50) -> List[Dict]:
         has_bills = db.query(CommittedExpense).filter(CommittedExpense.user_id == user.id).first() is not None
         
         # Last active date
-        last_income = db.query(func.max(Income.date)).filter(Income.user_id == user.id).scalar()
-        last_expense = db.query(func.max(Expense.date)).filter(Expense.user_id == user.id).scalar()
+        last_income = db.query(func.max(Income.date)).filter(Income.user_id == user.id, Income.date <= today).scalar()
+        last_expense = db.query(func.max(Expense.date)).filter(Expense.user_id == user.id, Expense.date <= today).scalar()
         last_active = max(last_income, last_expense) if last_income or last_expense else None
         days_since_active = (today - last_active).days if last_active else None
-        
+
         result.append({
             "id": user.id,
             "name": user.full_name,
@@ -328,12 +330,14 @@ def get_retention_metrics(db: Session) -> Dict:
         ids = [u[0] for u in user_ids]
         returned = db.query(func.count(func.distinct(Income.user_id))).filter(
             Income.user_id.in_(ids),
-            Income.date >= cutoff
+            Income.date >= cutoff,
+            Income.date <= today
         ).scalar() or 0
         # Also check expenses
         returned_exp = db.query(func.count(func.distinct(Expense.user_id))).filter(
             Expense.user_id.in_(ids),
-            Expense.date >= cutoff
+            Expense.date >= cutoff,
+            Expense.date <= today
         ).scalar() or 0
         return max(returned, returned_exp), len(ids)
     
@@ -450,8 +454,11 @@ def get_engagement_health(db: Session) -> Dict:
     active_3plus = 0
     
     for (user_id,) in all_users:
-        last_income = db.query(func.max(Income.date)).filter(Income.user_id == user_id).scalar()
-        last_expense = db.query(func.max(Expense.date)).filter(Expense.user_id == user_id).scalar()
+        last_income = db.query(func.max(Income.date)).filter(Income.user_id == user_id,Income.date <= today).scalar()
+        last_expense = db.query(func.max(Expense.date)).filter(
+    Expense.user_id == user_id,
+    Expense.date <= today
+).scalar()
         last_active = max(last_income, last_expense) if last_income or last_expense else None
         
         if last_active is None:
@@ -469,11 +476,13 @@ def get_engagement_health(db: Session) -> Dict:
         if last_active is not None:
             days_active_this_week = db.query(func.count(func.distinct(Income.date))).filter(
                 Income.user_id == user_id,
-                Income.date >= today - timedelta(days=7)
+                Income.date >= today - timedelta(days=7),
+                Income.date <= today
             ).scalar() or 0
             expense_days = db.query(func.count(func.distinct(Expense.date))).filter(
                 Expense.user_id == user_id,
-                Expense.date >= today - timedelta(days=7)
+                Expense.date >= today - timedelta(days=7),
+                Expense.date <= today
             ).scalar() or 0
             if max(days_active_this_week, expense_days) >= 3:
                 active_3plus += 1
