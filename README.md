@@ -1,522 +1,1187 @@
 # Fundivis
 
-> **A Behavioral Financial Visibility Platform built to help people understand where their money is—not just where it went.**
+> **Know where your money is—not just where it went.**
 
-Fundivis is a modern financial visibility platform designed to help individuals develop healthier financial habits through awareness, behavioral insights, and intentional money management.
+A Behavioral Financial Visibility Engine that helps people understand the true state of their finances through visibility, intentional money allocation, and behavioral insights.
 
-Unlike traditional budgeting applications that primarily focus on recording transactions, Fundivis helps users understand the current state of their finances by providing meaningful insights into spending behavior, savings progress, financial discipline, and overall financial health.
+Fundivis reimagines personal finance by moving beyond traditional budgeting and expense tracking. Instead of focusing only on historical transactions, it helps users answer a more important question:
 
-Built with Python, FastAPI, PostgreSQL, SQLAlchemy, and modern web technologies, Fundivis demonstrates production-ready backend engineering principles while introducing a behavior-first approach to personal finance.
+> **"Where is my money right now?"**
+
+Built with **FastAPI**, **PostgreSQL**, **SQLAlchemy**, and modern backend engineering practices, Fundivis demonstrates how thoughtful product design and scalable software architecture can work together to solve real-world financial problems.
 
 ---
 
-# Project Overview
+## Table of Contents
 
-Fundivis was created to solve a problem that many existing personal finance applications fail to address.
+- Overview
+- The Money Visibility Problem
+- Why Fundivis Exists
+- The Three States of Money
+- Core Product Philosophy
+- Why Fundivis is Different
+- Product Vision
 
-Most finance applications answer only one question:
+---
+
+# Overview
+
+Fundivis is a **Behavioral Financial Visibility Engine** designed to help individuals gain clarity over their financial lives.
+
+Unlike traditional budgeting applications that primarily record transactions, Fundivis focuses on the current state of a person's money.
+
+Instead of asking:
 
 > **"Where did my money go?"**
 
-Fundivis answers a much more important question:
+Fundivis asks:
 
-> **"Where is my money today, and is my financial behavior improving?"**
+> **"Where is my money today?"**
 
-Instead of functioning as a digital expense tracker, Fundivis serves as a financial awareness platform that helps users understand how their daily financial decisions affect their long-term financial wellbeing.
+This seemingly simple shift changes the entire financial experience.
 
-The platform combines transaction management with behavioral analytics to encourage consistent financial discipline rather than occasional budgeting.
+Rather than encouraging users to constantly analyze past spending, Fundivis helps them understand:
+
+- How much money is truly available to spend
+- How much money is intentionally protected
+- How much wealth has already been spent
+- Whether today's financial decisions improve tomorrow's financial position
+
+The result is a calmer, more intentional approach to personal finance built around clarity instead of complexity.
 
 ---
 
-# The Problem
+# The Money Visibility Problem
 
-Most personal finance applications focus heavily on bookkeeping.
+Most personal finance applications are built around transactions.
 
-Users can record income and expenses, categorize transactions, and generate reports, but these applications often fail to provide meaningful insight into financial behavior.
+They allow users to:
 
-As a result, users frequently experience problems such as:
+- Record income
+- Record expenses
+- Categorize spending
+- Generate monthly reports
+- Export historical data
 
-* Spending without understanding financial patterns.
-* Tracking transactions without improving financial habits.
-* Focusing on historical data instead of present financial position.
-* Saving inconsistently without measurable progress.
-* Difficulty understanding whether their financial discipline is improving over time.
-* Information overload without actionable guidance.
+While these features are useful, they fail to answer the question that matters most in everyday life.
 
-Many budgeting applications become digital notebooks instead of decision-making tools.
+Most people don't wake up wondering:
 
-Fundivis was designed to change that.
+> "How much did I spend last Tuesday?"
+
+Instead, they wonder:
+
+- Can I actually afford this purchase?
+- How much money is safe to spend?
+- Have I already set aside my rent?
+- Is my emergency fund protected?
+- Am I making financial progress?
+
+Traditional budgeting applications rarely answer these questions directly because they focus on recording financial history rather than representing financial reality.
+
+As a result, many users experience:
+
+- Financial anxiety despite having money
+- Confusion about their true financial position
+- Difficulty distinguishing savings from spending
+- Poor visibility into their available cash
+- Budget fatigue caused by overly complex financial tools
+
+Fundivis was created to solve this problem.
 
 ---
 
 # Why Fundivis Exists
 
-Fundivis was built on the belief that financial awareness should come before financial planning.
+Fundivis was built on one simple belief:
 
-Rather than encouraging users to simply record transactions, the platform helps them develop a continuous understanding of their financial behavior through meaningful indicators, behavioral trends, and actionable insights.
+> **Financial clarity reduces financial anxiety.**
 
-The objective is not simply to organize financial records.
+People don't necessarily make poor financial decisions because they lack money.
 
-The objective is to help people make better financial decisions every day.
+They often make poor decisions because they lack visibility.
+
+Without understanding where money currently exists, every purchase becomes uncertain.
+
+Savings feel invisible.
+
+Budgets feel restrictive.
+
+Financial planning becomes overwhelming.
+
+Fundivis transforms financial information into something people can understand immediately.
+
+Instead of overwhelming users with spreadsheets, categories, and dozens of reports, it provides a clear picture of where every unit of money currently exists.
+
+The goal isn't simply to organize financial records.
+
+The goal is to improve financial confidence.
 
 ---
 
-# Product Philosophy
+# The Three States of Money
 
-Fundivis follows four fundamental principles.
+Fundivis is built around a simple but powerful principle:
+
+> **Every unit of money exists in only one of three states.**
+
+Understanding these states allows users to see their financial position instantly without relying on complicated budgets or accounting knowledge.
+
+---
+
+## Available Money
+
+Available Money represents funds that are immediately safe to spend.
+
+This is the amount users can use today without affecting money already committed to future responsibilities.
+
+Examples include:
+
+- Wallet balance
+- Checking account
+- Cash available after protected allocations
+
+When users ask:
+
+> "How much can I safely spend today?"
+
+Fundivis answers using Available Money.
+
+---
+
+## Protected Money
+
+Protected Money represents wealth that has been intentionally reserved for a future purpose.
+
+Examples include:
+
+- Emergency Fund
+- Rent
+- School Fees
+- Vacation
+- Business Capital
+- Investments
+- House Deposit
+- Wedding Fund
+
+Protected Money is **not spending**.
+
+The money still belongs to the user.
+
+It has simply changed its financial purpose.
+
+Traditional budgeting applications frequently treat moving money into savings as an expense.
+
+Fundivis does not.
+
+Protected Money remains part of the user's wealth.
+
+---
+
+## Spent Money
+
+Spent Money represents wealth that has permanently left the user's financial position.
+
+Examples include:
+
+- Groceries
+- Transportation
+- Electricity Bills
+- Dining
+- Fuel
+- Shopping
+- Subscriptions
+- Medical Expenses
+
+Once money enters the Spent state, it no longer contributes to the user's current wealth.
+
+Unlike Protected Money, Spent Money cannot simply return through reclassification.
+
+---
+
+# Core Product Philosophy
+
+Everything inside Fundivis is built around a small set of principles.
+
+These principles influence every feature, every API endpoint, every dashboard, and every financial calculation.
+
+---
 
 ## 1. Visibility Creates Awareness
 
 People cannot improve what they cannot clearly see.
 
-Fundivis transforms financial information into understandable metrics that reveal spending habits, saving behavior, and financial progress.
+Fundivis transforms financial information into meaningful visibility rather than overwhelming users with endless transaction records.
+
+Every dashboard exists to answer practical financial questions quickly.
 
 ---
 
-## 2. Awareness Improves Decision Making
+## 2. Awareness Improves Decisions
 
-Once users understand their financial patterns, they become more intentional about future financial decisions.
+Better financial decisions begin with better financial understanding.
 
-The platform encourages informed choices rather than reactive spending.
+When users clearly understand where their money exists, they naturally become more intentional about future spending, saving, and planning.
 
----
-
-## 3. Discipline Builds Financial Freedom
-
-Long-term financial success is rarely the result of isolated budgeting sessions.
-
-Instead, it comes from consistent daily financial behavior.
-
-Fundivis measures and encourages that consistency.
+Fundivis encourages informed decision-making rather than reactive budgeting.
 
 ---
 
-## 4. Simplicity Increases Adoption
+## 3. Saving Is Not Spending
 
-Financial software should reduce anxiety rather than create it.
+This is one of Fundivis' defining principles.
 
-Every dashboard, report, and insight inside Fundivis is designed to simplify complex financial information into practical guidance that users can immediately understand.
+Moving money into an Emergency Fund does not reduce wealth.
 
----
+It simply changes the state of the money.
 
-# Core Objectives
+Example:
 
-Fundivis was designed to help users:
+```
+Wallet
+₦100,000
 
-* Understand where their money currently exists.
-* Monitor income and expenses.
-* Track financial progress over time.
-* Build consistent saving habits.
-* Reduce unnecessary spending.
-* Improve financial awareness.
-* Make informed financial decisions.
-* Develop long-term financial discipline.
+↓
 
-Rather than replacing financial advisors or accounting software, Fundivis complements them by helping individuals develop healthier financial behaviors through continuous visibility.
+Emergency Fund
+₦100,000
+```
 
----
+Traditional budgeting applications often record this as:
 
----
+Expense → ₦100,000
 
-# Platform Features
+Fundivis records it as:
 
-Fundivis is organized into several interconnected modules that work together to provide a complete financial visibility experience.
+Protected Money → ₦100,000
 
-Rather than treating every financial activity as an isolated transaction, each module contributes to a broader understanding of the user's financial behavior.
+No wealth was lost.
 
----
-
-# Authentication & User Management
-
-The platform provides secure account management using industry-standard authentication practices.
-
-### Features
-
-* User registration
-* Secure login
-* JWT authentication
-* Password hashing
-* Protected API endpoints
-* User profile management
-* Multi-user account isolation
-* Session validation
+Only visibility changed.
 
 ---
 
-# Income Management
+## 4. Transfers Are Not Income
 
-Income management allows users to record and monitor every source of income while building a complete picture of their earning patterns.
+Moving money between financial buckets should never create artificial income.
 
-### Features
+For example:
 
-* Record multiple income sources
-* Categorize income
-* Payment method tracking
-* Income history
-* Pagination
-* Search and filtering
-* Real-time updates
+```
+Emergency Fund
 
----
+↓
 
-# Expense Management
+Main Wallet
+```
 
-Expense tracking goes beyond simple transaction recording by encouraging users to understand where money is being spent and how spending habits evolve over time.
+This movement is **not income**.
 
-### Features
+It is simply a reclassification of existing wealth.
 
-* Record expenses
-* Expense categorization
-* Essential vs Non-Essential spending
-* Payment method tracking
-* Transaction history
-* Pagination
-* Search and filtering
-* Real-time updates
+This prevents misleading financial reports while maintaining an accurate picture of net worth.
 
 ---
 
-# Financial Dashboard
+## 5. Simplicity Reduces Anxiety
 
-The dashboard provides a consolidated overview of the user's financial position.
+Financial software should make users feel calmer, not more overwhelmed.
 
-Instead of presenting raw numbers, it transforms financial data into meaningful indicators that support better financial decisions.
+Every screen inside Fundivis is intentionally designed to reduce cognitive load.
 
-### Daily Summary
-
-* Total income
-* Total expenses
-* Net balance
-* Daily financial activity
-
-### Monthly Summary
-
-* Monthly income
-* Monthly expenses
-* Total savings
-* Savings rate
-* Financial performance
+Instead of presenting dozens of metrics, Fundivis surfaces only the information necessary to help users make confident financial decisions.
 
 ---
 
-# Savings Trend Analysis
+# Why Fundivis Is Different
 
-Fundivis continuously compares current financial performance with previous periods to help users understand whether they are improving financially.
+Most finance applications are built around bookkeeping.
 
-The Savings Trend module displays:
+Fundivis is built around financial visibility.
 
-* Current month savings
-* Previous month savings
-* Savings growth
-* Savings decline
-* Monthly comparison
-* Financial trend analysis
+| Traditional Finance Apps | Fundivis |
+|---------------------------|-----------|
+| Focus on past transactions | Focus on current financial position |
+| Saving is often treated as spending | Saving becomes Protected Money |
+| Transfers distort financial reports | Transfers are treated as reclassification |
+| Budget-centric | Visibility-centric |
+| Expense tracking | Wealth awareness |
+| Historical reporting | Real-time financial state |
+| Transaction management | Behavioral financial clarity |
 
-This allows users to identify progress instead of viewing isolated monthly reports.
+Fundivis doesn't try to replace accounting software.
+
+It complements financial planning by helping people understand the true state of their money before they make their next financial decision.
 
 ---
 
-# Financial Insights Engine
+# Product Vision
 
-The Financial Insights Engine transforms financial data into actionable behavioral insights.
+Fundivis is more than a finance tracker.
 
-Instead of displaying only transaction records, Fundivis identifies spending patterns that influence long-term financial health.
+It is the foundation for a new way of thinking about personal finance.
+
+Our long-term vision is to build a **Financial Operating System** that empowers people to:
+
+- Understand where every unit of money exists
+- Build intentional saving habits
+- Protect future financial commitments
+- Develop healthier financial behaviors
+- Make confident spending decisions
+- Reduce financial anxiety through clarity
+- Improve long-term financial wellbeing
+
+The future of personal finance isn't better budgeting.
+
+It's better visibility.
+
+Welcome to Fundivis.
+
+---
+
+# Core Features
+
+Fundivis is not organized around transactions.
+
+It is organized around **financial visibility**.
+
+Every module inside the platform exists to answer one question:
+
+> **"Does this help the user understand where their money is?"**
+
+Rather than overwhelming users with dozens of disconnected financial tools, Fundivis combines several intelligent modules into one unified Financial Visibility Engine.
+
+---
+
+# The Money Movement Engine
+
+Every financial activity inside Fundivis is classified into one of four money movements.
+
+Unlike traditional finance applications, these movements are not treated equally.
+
+Each movement has a unique effect on the user's financial position.
+
+---
+
+## Income
+
+Income represents money entering the user's financial ecosystem.
 
 Examples include:
 
-* Highest spending category
-* Largest individual expense
-* Average daily spending
-* Essential spending ratio
-* Non-essential spending ratio
-* Monthly financial behavior summary
+- Salary
+- Freelance payments
+- Business income
+- Gifts
+- Refunds
+- Investment returns
 
-These insights help users understand why their financial position changes over time.
-
----
-
-# Financial Consistency Tracking
-
-One of the strongest indicators of financial improvement is consistency.
-
-Fundivis rewards consistent financial tracking through a streak system that encourages users to maintain healthy financial habits.
-
-The platform tracks:
-
-* Current tracking streak
-* Longest tracking streak
-* Today's financial activity
-* Overall consistency
-
-This feature promotes long-term engagement without relying on unnecessary gamification.
+Income increases Available Money.
 
 ---
 
-# Transaction History
+## Expenses
 
-Users can easily review historical financial records through a searchable transaction history.
+Expenses represent money permanently exchanged for goods or services.
 
-### Income History
+Examples include:
 
-* Chronological listing
-* Pagination
-* Search support
-* Source filtering
+- Groceries
+- Transportation
+- Fuel
+- Utility bills
+- Shopping
+- Entertainment
+- Subscriptions
 
-### Expense History
-
-* Chronological listing
-* Pagination
-* Category filtering
-* Search support
-
-The transaction history is designed to remain fast and organized even as financial records grow.
+Expenses reduce both Available Money and Net Worth.
 
 ---
 
-# Responsive User Experience
+## Allocations
 
-Fundivis is designed to deliver a consistent experience across multiple devices.
+Allocations move money into a Protected Bucket.
 
-Supported platforms include:
+Examples:
 
-* Desktop
-* Laptop
-* Tablet
-* Mobile devices
+```
+Wallet
 
-Responsive features include:
+↓
 
-* Adaptive layouts
-* Responsive navigation
-* Mobile sidebar
-* Flexible dashboards
-* Responsive transaction tables
-* Optimized cards and charts
+Emergency Fund
+```
+
+```
+Checking Account
+
+↓
+
+Vacation Bucket
+```
+
+Allocations are **not expenses.**
+
+Instead, they convert Available Money into Protected Money while preserving total wealth.
+
+---
+
+## Reclassifications
+
+Reclassifications move money between financial locations without changing ownership.
+
+Examples:
+
+```
+Emergency Fund
+
+↓
+
+Wallet
+```
+
+```
+Rent Bucket
+
+↓
+
+Checking Account
+```
+
+Reclassifications are:
+
+- Not income
+- Not expenses
+- Not savings
+
+They simply change where money exists.
+
+This prevents inaccurate reports that commonly occur in traditional budgeting applications.
 
 ---
 
-# Security
+# Wealth Protection Engine
 
-Security is treated as a core platform requirement rather than an optional feature.
+One of Fundivis' defining innovations is the Wealth Protection Engine.
 
-Fundivis implements multiple layers of protection including:
+Instead of treating savings as an expense, Fundivis allows users to intentionally protect portions of their wealth using financial buckets.
 
-* JWT Authentication
-* Secure password hashing
-* Protected routes
-* Multi-user data isolation
-* Rate limiting
-* Request validation
-* CORS protection
-* Environment variable configuration
+Protected money remains visible at all times.
 
-These measures help ensure that each user's financial information remains secure and isolated from every other account.
+Users always know:
+
+- What is available
+- What is protected
+- What has already been spent
 
 ---
+
+## Financial Buckets
+
+Users can create unlimited purpose-driven buckets.
+
+Examples include:
+
+- Emergency Fund
+- Rent
+- School Fees
+- Vacation
+- House Deposit
+- Wedding
+- Investment
+- Car Maintenance
+- Taxes
+- Business Capital
+
+Every bucket contains money that still belongs to the user.
+
+The bucket simply defines its purpose.
+
+---
+
+## Bucket Operations
+
+Supported operations include:
+
+- Create Bucket
+- Edit Bucket
+- Archive Bucket
+- Deposit Money
+- Withdraw Money
+- Transfer Between Buckets
+- View Bucket History
+- Track Bucket Growth
+
+Because buckets represent Protected Money, none of these operations distort income or expense reports.
+
+---
+
+# Financial Visibility Dashboard
+
+The dashboard is the heart of Fundivis.
+
+Instead of displaying dozens of disconnected reports, it presents the user's financial position in real time.
+
+The dashboard answers questions such as:
+
+- How much money can I safely spend today?
+- How much wealth is protected?
+- What percentage of my money has already been spent?
+- Is my financial position improving?
+- Which financial commitments are fully funded?
+
+Every card exists to improve decision-making rather than simply displaying numbers.
+
+---
+
+## Dashboard Overview
+
+The Financial Visibility Dashboard displays:
+
+- Available Money
+- Protected Money
+- Spent Money
+- Total Net Worth
+- Monthly Cash Flow
+- Recent Financial Activity
+- Active Financial Buckets
+- Spending Distribution
+- Financial Health Indicators
+
+---
+
+## Daily Snapshot
+
+Provides an instant overview of today's financial activity.
+
+Includes:
+
+- Today's Income
+- Today's Expenses
+- Net Daily Movement
+- Current Available Balance
+
+---
+
+## Monthly Financial Summary
+
+Every month Fundivis generates a complete visibility report.
+
+Including:
+
+- Total Income
+- Total Spending
+- Total Protected Wealth
+- Available Money
+- Largest Expense
+- Largest Income
+- Savings Allocation
+- Spending Categories
+
+Unlike traditional monthly reports, this summary explains where money currently exists—not just where it went.
+
+---
+
+# Behavioral Insights Engine
+
+Financial awareness requires more than numbers.
+
+Fundivis continuously analyzes financial behavior to surface meaningful insights.
+
+Instead of simply displaying charts, the platform identifies patterns that influence long-term financial wellbeing.
+
+Examples include:
+
+- Highest Spending Category
+- Largest Expense
+- Spending Frequency
+- Income Consistency
+- Average Daily Spending
+- Savings Consistency
+- Bucket Funding Progress
+- Financial Discipline Indicators
+
+These insights help users understand *why* their financial position changes over time.
+
+---
+
+# Financial Health Indicators
+
+Fundivis introduces behavioral metrics that go beyond traditional budgeting.
+
+Examples include:
+
+## Wealth Protection Ratio
+
+Measures how much of the user's wealth is intentionally protected.
+
+---
+
+## Spending Ratio
+
+Shows the percentage of income converted into expenses.
+
+---
+
+## Available Cash Ratio
+
+Measures how much money remains safely available after all protected allocations.
+
+---
+
+## Allocation Consistency
+
+Tracks how consistently users protect money before spending it.
+
+---
+
+## Financial Momentum
+
+Measures whether the user's financial position is improving over time.
+
+Instead of focusing on isolated transactions, Fundivis evaluates long-term behavioral trends.
+
+---
+
+# Transaction Intelligence
+
+Every transaction contributes to a larger financial story.
+
+Users can:
+
+- Search transactions
+- Filter transactions
+- Sort transactions
+- View transaction history
+- Inspect transaction details
+- Track transaction categories
+- Review financial timelines
+
+Unlike traditional transaction lists, Fundivis places every transaction within the broader context of financial visibility.
+
+---
+
+# Search & Filtering
+
+Powerful search capabilities allow users to quickly locate financial information.
+
+Supported filters include:
+
+- Date Range
+- Transaction Type
+- Category
+- Bucket
+- Payment Method
+- Amount Range
+- Income Source
+- Financial State
+
+This ensures financial records remain easy to navigate as data grows.
+
+---
+
+# Financial Timeline
+
+Fundivis maintains a chronological timeline of financial activity.
+
+Rather than presenting isolated entries, the timeline illustrates how every financial decision contributes to the user's overall financial journey.
+
+Users can review:
+
+- Income Events
+- Expense Events
+- Bucket Allocations
+- Bucket Withdrawals
+- Transfers
+- Financial Milestones
+
+This transforms transaction history into a story of financial progress.
+
+---
+
+# Notifications & Reminders
+
+Fundivis keeps users informed without becoming intrusive.
+
+Examples include:
+
+- Bucket Goal Reached
+- Low Available Balance
+- Monthly Financial Summary Ready
+- Allocation Reminder
+- Weekly Visibility Report
+- Unusual Spending Activity
+
+Notifications encourage proactive financial decisions rather than reactive budgeting.
+
+---
+
+# Multi-User Architecture
+
+Fundivis is designed as a scalable multi-tenant platform.
+
+Every user's financial data remains completely isolated.
+
+The platform provides:
+
+- Secure Account Isolation
+- Role-Based Authentication
+- JWT Security
+- Protected API Endpoints
+- Independent Financial Dashboards
+- User-Specific Buckets
+- User-Specific Reports
+- Secure Data Ownership
+
+This architecture allows Fundivis to scale from individual users to enterprise-grade deployments while maintaining complete data privacy.
 
 ---
 
 # System Architecture
 
-Fundivis follows a layered architecture that separates presentation, business logic, and data access into independent components.
+Fundivis is designed using a layered architecture that separates presentation, business logic, and data access into independent, loosely coupled components.
 
-This approach improves maintainability, scalability, and long-term extensibility while keeping the codebase organized and easy to understand.
+This approach improves maintainability, scalability, testability, and long-term extensibility while ensuring that business rules remain independent of infrastructure concerns.
+
+Rather than allowing application logic to spread across controllers or database models, Fundivis centralizes business rules within dedicated service layers, making the platform easier to evolve as new financial capabilities are introduced.
+
+---
+
+## High-Level Architecture
 
 ```text
-                        Client Browser
-                               │
-                               ▼
-                   HTML • CSS • JavaScript
-                               │
-                               ▼
-                     FastAPI REST API Layer
-                               │
-                               ▼
-              Authentication & Authorization
-                               │
-                               ▼
-                  Business Logic (Services)
-                               │
-                               ▼
-              Database Layer (SQLAlchemy ORM)
-                               │
-                               ▼
-                      PostgreSQL Database
+                        Client Applications
+         ┌──────────────────────────────────────────┐
+         │                                          │
+         │   Web App   │   Mobile App   │   Future APIs
+         │                                          │
+         └──────────────────────────────────────────┘
+                           │
+                           ▼
+                 FastAPI REST API Layer
+                           │
+                           ▼
+          Authentication & Authorization Layer
+                           │
+                           ▼
+                Business Logic (Services)
+                           │
+                           ▼
+              Repository / Database Layer
+                           │
+                           ▼
+                 PostgreSQL Database
 ```
 
-Each layer has a clearly defined responsibility, reducing coupling and making the application easier to extend as new financial modules are introduced.
+Each layer has a clearly defined responsibility.
+
+This separation allows frontend technologies to evolve independently while preserving business logic and financial rules.
 
 ---
 
 # Backend Architecture
 
-The backend is built using FastAPI and follows modern REST API development practices.
+The backend is built using **FastAPI** and follows modern API engineering principles suitable for production environments.
 
-The architecture emphasizes:
+The application emphasizes:
 
-* Modular project organization
-* Separation of concerns
-* Service-oriented business logic
-* Database abstraction through SQLAlchemy ORM
-* Secure authentication using JWT
-* Database migrations using Alembic
-* Request validation using Pydantic
-* RESTful API design principles
+- Clean Architecture principles
+- Separation of Concerns
+- RESTful API Design
+- Dependency Injection
+- Modular Project Structure
+- Service Layer Pattern
+- SQLAlchemy ORM
+- Pydantic Validation
+- JWT Authentication
+- Alembic Database Migrations
 
-The backend exposes a clean API that can support multiple frontend clients, including web and future mobile applications.
+Business rules remain completely independent of presentation logic.
+
+This makes the platform easier to maintain, test, and extend over time.
 
 ---
 
-# Frontend Architecture
+# API Design Philosophy
 
-The frontend is intentionally lightweight and communicates with the backend exclusively through REST APIs.
+Fundivis exposes a versioned REST API designed around predictable, resource-oriented endpoints.
 
-The application is built using:
+Examples include:
 
-* HTML5
-* Tailwind CSS
-* Vanilla JavaScript (ES Modules)
+```text
+/api/v1/auth
 
-The frontend architecture focuses on:
+/api/v1/users
 
-* Component-based organization
-* API-driven rendering
-* Responsive layouts
-* Modular JavaScript files
-* Separation of presentation from business logic
+/api/v1/income
 
-All financial calculations and business rules remain on the backend to ensure consistency and security.
+/api/v1/expenses
+
+/api/v1/buckets
+
+/api/v1/transactions
+
+/api/v1/dashboard
+
+/api/v1/insights
+
+/api/v1/reports
+```
+
+The API follows consistent conventions for:
+
+- HTTP Status Codes
+- Validation
+- Error Handling
+- Pagination
+- Filtering
+- Sorting
+- Authentication
+- Response Models
+
+This consistency improves developer experience and simplifies frontend integration.
+
+---
+
+# Authentication & Authorization
+
+Security is a first-class citizen inside Fundivis.
+
+Authentication is implemented using industry-standard JWT access tokens.
+
+Current authentication features include:
+
+- User Registration
+- Secure Login
+- Password Hashing
+- JWT Access Tokens
+- Protected Endpoints
+- User Session Validation
+- Role-Based Authorization (planned)
+
+Every API request is authenticated before accessing protected financial resources.
+
+---
+
+# Database Architecture
+
+Fundivis uses PostgreSQL as its primary relational database.
+
+The database schema has been designed around one guiding principle:
+
+> **The database should represent financial truth.**
+
+Every movement of money is persisted in a way that preserves historical accuracy while allowing the system to reconstruct a user's financial position at any point in time.
+
+The schema emphasizes:
+
+- Referential Integrity
+- Data Consistency
+- Financial Accuracy
+- Multi-User Isolation
+- Scalable Relationships
+- Efficient Query Performance
+
+---
+
+# Core Domain Models
+
+The platform revolves around several core entities.
+
+## User
+
+Represents an authenticated platform user.
+
+Responsibilities include:
+
+- Authentication
+- Profile Management
+- Account Ownership
+- Financial Isolation
+
+---
+
+## Account
+
+Represents a financial source.
+
+Examples:
+
+- Cash Wallet
+- Checking Account
+- Savings Account
+- Mobile Money
+- Business Account
+
+---
+
+## Transaction
+
+Represents every financial movement.
+
+Each transaction is classified into one of four movement types:
+
+- Income
+- Expense
+- Allocation
+- Reclassification
+
+This ensures accurate financial reporting without misleading calculations.
+
+---
+
+## Bucket
+
+Represents Protected Money.
+
+Buckets allow users to intentionally reserve wealth for future purposes.
+
+Examples:
+
+- Emergency Fund
+- Rent
+- Tuition
+- Investments
+- Vacation
+
+Unlike traditional budgeting systems, bucket allocations never reduce net worth.
+
+---
+
+## Category
+
+Provides organizational structure for transactions.
+
+Examples include:
+
+- Food
+- Transportation
+- Utilities
+- Entertainment
+- Salary
+- Business Income
+
+---
+
+## Dashboard Snapshot
+
+Stores aggregated financial metrics used to generate visibility dashboards efficiently.
+
+---
+
+# Financial Calculation Engine
+
+Unlike traditional finance applications, Fundivis does not rely on simplistic balance calculations.
+
+Instead, balances are derived using business rules based on money movement types.
+
+This ensures that:
+
+- Allocations do not become expenses.
+- Reclassifications do not become income.
+- Bucket transfers preserve wealth.
+- Reports remain financially accurate.
+
+Every dashboard metric is built upon these rules.
 
 ---
 
 # Technology Stack
 
-| Layer                | Technology                      |
-| -------------------- | ------------------------------- |
-| Programming Language | Python                          |
-| Backend Framework    | FastAPI                         |
-| ORM                  | SQLAlchemy                      |
-| Database             | PostgreSQL                      |
-| Database Migrations  | Alembic                         |
-| Authentication       | JWT                             |
-| Password Security    | Password Hashing                |
-| Rate Limiting        | SlowAPI                         |
-| API Documentation    | Swagger / OpenAPI               |
-| Frontend             | HTML5                           |
-| Styling              | Tailwind CSS                    |
-| JavaScript           | Vanilla JavaScript (ES Modules) |
-| Deployment           | Railway                         |
-| Frontend Hosting     | Netlify                         |
-| Version Control      | Git & GitHub                    |
+| Layer | Technology |
+|--------|------------|
+| Language | Python 3 |
+| Backend Framework | FastAPI |
+| Database | PostgreSQL |
+| ORM | SQLAlchemy |
+| Validation | Pydantic |
+| Authentication | JWT |
+| Password Security | Passlib + BCrypt |
+| Database Migrations | Alembic |
+| API Documentation | Swagger / OpenAPI |
+| Rate Limiting | SlowAPI |
+| Environment Management | Python-dotenv |
+| Testing | Pytest |
+| Containerization | Docker *(planned)* |
+| Background Tasks | Celery + Redis *(planned)* |
+| CI/CD | GitHub Actions *(planned)* |
 
 ---
 
 # Project Structure
 
-## Backend
-
 ```text
 fundivis/
 │
 ├── app/
+│   │
+│   ├── api/
+│   │   ├── dependencies.py
+│   │   ├── routes/
+│   │   └── middleware/
+│   │
 │   ├── core/
+│   │   ├── config.py
+│   │   ├── security.py
+│   │   └── settings.py
+│   │
+│   ├── database/
+│   │   ├── session.py
+│   │   └── base.py
+│   │
 │   ├── models/
-│   ├── routers/
+│   │
 │   ├── schemas/
+│   │
+│   ├── repositories/
+│   │
 │   ├── services/
+│   │
 │   ├── utils/
-│   ├── database.py
-│   └── main.py
+│   │
+│   ├── main.py
+│   │
+│   └── __init__.py
 │
 ├── alembic/
+├── tests/
+├── docs/
 ├── requirements.txt
-├── .env.example
 ├── README.md
-└── .gitignore
+└── .env.example
 ```
 
----
+The project is intentionally modular.
 
-## Frontend
-
-```text
-fundivis-frontend/
-│
-├── assets/
-│   ├── css/
-│   └── js/
-│       ├── api.js
-│       ├── auth.js
-│       ├── dashboard.js
-│       ├── expense.js
-│       ├── income.js
-│       ├── insights.js
-│       ├── savingsTrend.js
-│       ├── streaks.js
-│       ├── summary.js
-│       └── transactions.js
-│
-├── index.html
-├── login.html
-├── register.html
-└── dashboard.html
-```
-
----
-
-# Database Design
-
-Fundivis uses a relational database model designed to ensure data integrity while supporting multiple independent users.
-
-The database architecture emphasizes:
-
-* Multi-user account isolation
-* Normalized relational tables
-* Referential integrity
-* Efficient querying
-* Scalable financial record storage
-
-Core entities include:
-
-* User
-* Income
-* Expense
-* Category
-* Payment Method
-* Financial Summary
-* Tracking Streak
-
-Relationships are modeled using SQLAlchemy ORM, making the application easier to maintain while reducing database complexity.
+Every module has a single responsibility, making future features easier to introduce without impacting unrelated components.
 
 ---
 
 # Engineering Principles
 
-Fundivis was developed with the following software engineering principles in mind:
+Fundivis is built around engineering practices commonly used in production software systems.
 
-* Clean and readable code
-* Separation of concerns
-* RESTful API design
-* Secure authentication
-* Scalable architecture
-* Reusable business logic
-* Modular application structure
-* Consistent validation
-* Maintainable codebase
-* Extensible platform design
+The project emphasizes:
 
-These principles allow new financial modules to be added with minimal impact on existing functionality.
+- Clean Code
+- SOLID Principles
+- DRY (Don't Repeat Yourself)
+- KISS (Keep It Simple)
+- Separation of Concerns
+- Layered Architecture
+- Modular Design
+- Type Safety
+- Explicit Validation
+- Scalable API Design
+- Reusable Business Logic
+- Secure Authentication
+- Consistent Error Handling
+
+These principles ensure the codebase remains maintainable as the platform grows.
 
 ---
+
+# Performance & Scalability
+
+Although Fundivis is currently focused on individual users, its architecture is designed with future growth in mind.
+
+Scalability considerations include:
+
+- Stateless REST APIs
+- Database Indexing
+- Efficient Query Design
+- Pagination
+- Lazy Loading
+- Modular Services
+- Background Job Support
+- Horizontal Scaling Readiness
+
+Future versions will introduce:
+
+- Redis Caching
+- Celery Workers
+- Event-Driven Processing
+- Queue-Based Notifications
+- Real-Time Financial Updates
+
+---
+
+# API Documentation
+
+FastAPI automatically generates interactive API documentation.
+
+After starting the application, developers can access:
+
+## Swagger UI
+
+```text
+http://localhost:8000/docs
+```
+
+## ReDoc
+
+```text
+http://localhost:8000/redoc
+```
+
+These interfaces allow developers to:
+
+- Explore available endpoints
+- Test requests
+- Inspect response schemas
+- Understand authentication requirements
+- Validate request models
+
+without requiring additional documentation.
+
+---
+
+# Why This Architecture?
+
+Fundivis is intended to become much more than an expense tracker.
+
+It is being architected as the foundation of a future Financial Operating System.
+
+This means every design decision prioritizes:
+
+- Maintainability
+- Extensibility
+- Financial Accuracy
+- Developer Experience
+- Long-Term Scalability
+
+The current implementation lays the groundwork for future capabilities such as:
+
+- AI Financial Coaching
+- Bank Integrations
+- Cash Flow Forecasting
+- Financial Health Scoring
+- Smart Wealth Allocation
+- Multi-Currency Support
+- Investment Visibility
+- Open Banking APIs
+
+Rather than requiring a complete rewrite, these capabilities can be introduced incrementally on top of the existing architecture.
 
 ---
 
 # Getting Started
 
-Follow the steps below to set up Fundivis locally.
+Follow the steps below to run Fundivis locally.
 
-## Clone the Repository
+## Prerequisites
+
+Before getting started, ensure the following tools are installed:
+
+- Python 3.12+
+- PostgreSQL 15+
+- Git
+- Virtual Environment (venv)
+- Node.js *(optional for frontend development)*
+
+---
+
+# Clone the Repository
 
 ```bash
 git clone https://github.com/codewithgabby/fundivis.git
@@ -563,7 +1228,7 @@ Create a `.env` file in the project root.
 Example:
 
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/fundivis
+DATABASE_URL=postgresql://postgres:password@localhost:5432/fundivis
 
 SECRET_KEY=your-secret-key
 
@@ -582,7 +1247,7 @@ alembic upgrade head
 
 ---
 
-## Start the Backend Server
+## Run the Development Server
 
 ```bash
 uvicorn app.main:app --reload
@@ -598,143 +1263,171 @@ http://127.0.0.1:8000
 
 # Frontend Setup
 
-The frontend can be served using any static web server.
+The frontend communicates entirely through REST APIs.
 
-For local development, you can use the VS Code Live Server extension.
+During development:
 
-Update the API base URL inside your frontend configuration to point to your backend server.
+1. Update the API Base URL.
 
 Example:
 
 ```javascript
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = "http://localhost:8000";
 ```
 
-For production deployments, update the base URL to your Railway deployment.
+2. Launch the frontend using Live Server or any static server.
 
 ---
 
 # API Documentation
 
-Fundivis provides automatically generated API documentation through FastAPI.
-
-After starting the backend server, visit:
+Fundivis ships with automatically generated interactive API documentation.
 
 ## Swagger UI
 
 ```
-http://127.0.0.1:8000/docs
+http://localhost:8000/docs
 ```
 
 ## ReDoc
 
 ```
-http://127.0.0.1:8000/redoc
+http://localhost:8000/redoc
 ```
 
-These interactive interfaces allow developers to explore every available endpoint, inspect request and response models, and test the API directly from the browser.
+Developers can:
 
----
+- Test endpoints
+- Inspect schemas
+- Explore authentication
+- Validate payloads
 
-# Deployment
-
-Fundivis is deployed using modern cloud platforms.
-
-## Frontend
-
-Netlify
-
-https://fundivis.netlify.app
+without leaving the browser.
 
 ---
 
 # Security
 
-Security has been incorporated throughout the platform to protect user accounts and financial information.
+Security is a foundational part of Fundivis rather than an afterthought.
 
-Current security measures include:
+Current security features include:
 
-* JWT Authentication
-* Password Hashing
-* Protected API Endpoints
-* Multi-user Data Isolation
-* Request Validation
-* Rate Limiting
-* CORS Protection
-* Environment-based Configuration
+- JWT Authentication
+- Password Hashing (BCrypt)
+- Protected API Endpoints
+- Request Validation
+- User Data Isolation
+- SQL Injection Protection via ORM
+- Environment-Based Configuration
+- CORS Protection
+- Rate Limiting
 
-Future releases will introduce additional security improvements including refresh tokens, audit logging, and advanced monitoring.
+Future security enhancements include:
+
+- Refresh Tokens
+- Audit Logging
+- Device Sessions
+- Email Verification
+- Two-Factor Authentication (2FA)
+- Account Activity Monitoring
+
+---
+
+# Deployment
+
+Fundivis is designed for cloud-native deployment.
+
+Recommended deployment stack:
+
+| Component | Platform |
+|------------|----------|
+| Backend | Railway |
+| Database | PostgreSQL |
+| Frontend | Netlify |
+| Storage | Cloudflare R2 *(planned)* |
+| Background Jobs | Redis + Celery *(planned)* |
 
 ---
 
 # Product Roadmap
 
-## Version 1.0
+## Version 1
 
-Completed features include:
-
-* User Authentication
-* Income Tracking
-* Expense Tracking
-* Daily Financial Summary
-* Monthly Financial Summary
-* Savings Tracking
-* Savings Trends
-* Financial Insights
-* Tracking Streaks
-* Responsive Dashboard
-* Transaction History
-* Multi-user Architecture
+- User Authentication
+- Income Management
+- Expense Management
+- Financial Dashboard
+- Transaction History
+- Financial Insights
+- Savings Buckets
+- Multi-User Support
 
 ---
 
-## Version 2.0
+## Version 2
 
-Planned improvements include:
-
-* Financial Status Card
-* Spending Goals
-* Weekly Financial Reports
-* CSV Export
-* Smart Notifications
-* Charts and Advanced Visualizations
-* Improved Mobile Experience
-* AI Spending Insights
+- Protected Wealth Engine
+- Smart Bucket Recommendations
+- Financial Health Score
+- Weekly Financial Reports
+- Cash Flow Analytics
+- CSV Export
+- Spending Forecasts
 
 ---
 
-## Long-Term Vision
+## Version 3
 
-Fundivis is evolving beyond a finance tracker into a complete Behavioral Financial Visibility Platform.
+- AI Financial Coach
+- Open Banking Integration
+- Investment Visibility
+- Financial Goals
+- Shared Family Accounts
+- Smart Notifications
+- Predictive Financial Analytics
+
+---
+
+# Long-Term Vision
+
+Fundivis is not being built to become another expense tracker.
+
+The long-term vision is to create a **Financial Operating System** that helps people make better financial decisions through visibility instead of complexity.
 
 Future capabilities include:
 
-* Safe-to-Spend Engine
-* Protected Wealth Buckets
-* Committed Bills
-* Income Intelligence
-* Financial Health Score
-* Pre-Spend Checker
-* Behavioral Analytics Dashboard
-* Multi-Currency Support
-* Bank Integrations
-* AI Financial Assistant
+- Safe-to-Spend Engine
+- Cash Flow Forecasting
+- Behavioral Analytics
+- Financial Health Index
+- AI Wealth Assistant
+- Investment Tracking
+- Multi-Currency Support
+- Open Banking APIs
+- Financial Planning Workflows
+- Intelligent Wealth Allocation
+
+Our mission is simple:
+
+> Help people understand where their money exists before they decide where it should go.
 
 ---
 
 # Screenshots
 
-The following screenshots will be added as the platform continues to evolve:
+Screenshots will be added as development progresses.
 
-* Login Page
-* Registration Page
-* Financial Dashboard
-* Income Management
-* Expense Management
-* Financial Insights
-* Savings Trends
-* Mobile Dashboard
-* Swagger Documentation
+Planned previews include:
+
+- Login
+- Registration
+- Dashboard
+- Financial Buckets
+- Money Allocation
+- Insights Dashboard
+- Reports
+- Mobile View
+- Swagger API Documentation
 
 ---
 
@@ -742,15 +1435,15 @@ The following screenshots will be added as the platform continues to evolve:
 
 Contributions are welcome.
 
-If you would like to contribute:
+If you'd like to contribute:
 
 1. Fork the repository.
 2. Create a feature branch.
 3. Commit your changes.
-4. Push the branch.
+4. Push your branch.
 5. Open a Pull Request.
 
-Bug reports, feature requests, and suggestions are always appreciated.
+Bug reports, ideas, and feature requests are always appreciated.
 
 ---
 
@@ -758,7 +1451,7 @@ Bug reports, feature requests, and suggestions are always appreciated.
 
 This project is licensed under the MIT License.
 
-See the LICENSE file for additional information.
+See the LICENSE file for details.
 
 ---
 
@@ -768,35 +1461,38 @@ See the LICENSE file for additional information.
 
 Python Backend Engineer
 
-I build scalable backend systems, REST APIs, SaaS platforms, and AI-powered applications using Python, FastAPI, and PostgreSQL.
+I design scalable backend systems, REST APIs, SaaS platforms, and AI-powered applications using Python, FastAPI, PostgreSQL, and modern software architecture principles.
 
-**Portfolio**
+### Portfolio
 
 https://gabbydev.netlify.app
 
-**GitHub**
+### GitHub
 
 https://github.com/codewithgabby
 
-**LinkedIn**
+### LinkedIn
 
 https://www.linkedin.com/in/johnson-gabriel-b716aa212/
 
-**Email**
+### Email
 
-[j.gabriel.dev77@gmail.com](mailto:j.gabriel.dev77@gmail.com)
+j.gabriel.dev77@gmail.com
 
 ---
 
 # Acknowledgements
 
-Fundivis was designed and developed as part of my journey toward becoming a world-class Backend Engineer.
+Fundivis represents more than a software project.
 
-The project reflects my passion for building software that solves real-world problems while combining thoughtful product design with scalable backend architecture.
+It reflects my belief that software should solve meaningful problems while remaining elegant, maintainable, and scalable.
 
-It also serves as a foundation for future AI-powered financial tools that promote financial awareness, discipline, and long-term decision-making.
+This project combines software engineering, product thinking, and behavioral finance into a single platform designed to improve the way people understand their money.
+
+It also serves as a demonstration of production-ready backend engineering practices using FastAPI and PostgreSQL while laying the foundation for a future Financial Operating System.
 
 ---
 
-**If you find this project interesting or useful, consider starring the repository. Feedback, suggestions, and contributions are always welcome.**
+If you found this project interesting, consider giving the repository a star.
 
+Feedback, ideas, and contributions are always welcome.
